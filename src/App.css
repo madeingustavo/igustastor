@@ -1,8 +1,16 @@
+
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.5rem;
   text-align: center;
+}
+
+@media (min-width: 768px) {
+  #root {
+    max-width: 1280px;
+    padding: 2rem;
+  }
 }
 
 .logo {
@@ -34,9 +42,33 @@
 }
 
 .card {
-  padding: 2em;
+  padding: 1em;
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 2em;
+  }
 }
 
 .read-the-docs {
   color: #888;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .mobile-scroll::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+  
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }

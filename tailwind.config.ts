@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -12,8 +13,16 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: {
+				DEFAULT: '1rem',
+				sm: '1.5rem',
+				lg: '2rem'
+			},
 			screens: {
+				sm: '640px',
+				md: '768px',
+				lg: '1024px',
+				xl: '1280px',
 				'2xl': '1400px'
 			}
 		},
@@ -84,11 +93,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'mobile-slide-in': {
+					'0%': { transform: 'translateY(100%)' },
+					'100%': { transform: 'translateY(0)' }
+				},
+				'mobile-slide-out': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(100%)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'mobile-slide-in': 'mobile-slide-in 0.3s ease-out',
+				'mobile-slide-out': 'mobile-slide-out 0.3s ease-out'
 			}
 		}
 	},

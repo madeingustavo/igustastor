@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Devices from "./pages/Devices";
+import DeviceAddPage from "./pages/DeviceAddPage";
 import NotFound from "./pages/NotFound";
 
 // Create a client for React Query
@@ -20,6 +21,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/devices" element={<Devices />} />
+          <Route path="/devices/add" element={<DeviceAddPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

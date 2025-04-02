@@ -15,6 +15,13 @@ export interface Device {
   created_date: string;
   original_date: string;
   _exact_original_date: string;
+  
+  // New technical fields
+  imei1?: string;
+  imei2?: string;
+  battery_health?: string;
+  has_apple_warranty?: boolean;
+  warranty_date?: string;
 }
 
 export interface Sale {

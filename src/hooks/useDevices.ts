@@ -22,13 +22,20 @@ export const useDevices = () => {
   const addDevice = (deviceData: Omit<Device, 'id' | 'created_date' | 'status'>) => {
     const now = new Date().toISOString();
     
+    // Format warranty date if provided
+    let formattedWarrantyDate: string | undefined;
+    if (deviceData.warranty_date) {
+      formattedWarrantyDate = new Date(deviceData.warranty_date).toISOString();
+    }
+    
     const newDevice: Device = {
       ...deviceData,
       id: generateId(),
       created_date: now,
       status: 'available',
       original_date: deviceData.original_date || now,
-      _exact_original_date: deviceData._exact_original_date || now
+      _exact_original_date: deviceData._exact_original_date || now,
+      warranty_date: formattedWarrantyDate
     };
 
     setDevices(prev => [...prev, newDevice]);

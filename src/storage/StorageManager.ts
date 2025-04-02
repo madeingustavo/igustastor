@@ -17,7 +17,7 @@ export class StorageManager {
   /**
    * Get data from localStorage
    */
-  static get<T>(key: string, defaultValue: T | null = null): T | null {
+  static get<T>(key: string, defaultValue: T): T {
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : defaultValue;

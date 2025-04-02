@@ -12,8 +12,22 @@ export const STORAGE_KEYS = {
   SETTINGS: 'settings'
 };
 
-// Default data for each collection
-const DEFAULT_DATA = {
+// Define type-safe interface for default data
+interface DefaultDataType {
+  [STORAGE_KEYS.DEVICES]: Device[];
+  [STORAGE_KEYS.SALES]: Sale[];
+  [STORAGE_KEYS.CUSTOMERS]: Customer[];
+  [STORAGE_KEYS.SUPPLIERS]: Supplier[];
+  [STORAGE_KEYS.EXPENSES]: Expense[];
+  [STORAGE_KEYS.SETTINGS]: {
+    theme: string;
+    lowStockAlert: number;
+    currency: string;
+  };
+}
+
+// Default data for each collection with proper types
+const DEFAULT_DATA: DefaultDataType = {
   [STORAGE_KEYS.DEVICES]: [] as Device[],
   [STORAGE_KEYS.SALES]: [] as Sale[],
   [STORAGE_KEYS.CUSTOMERS]: [] as Customer[],
@@ -30,23 +44,23 @@ const DEFAULT_DATA = {
 export class AppStorageManager {
   // Get data with type safety
   static getDevices(): Device[] {
-    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA[STORAGE_KEYS.DEVICES]) as Device[];
+    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA[STORAGE_KEYS.DEVICES]);
   }
 
   static getSales(): Sale[] {
-    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA[STORAGE_KEYS.SALES]) as Sale[];
+    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA[STORAGE_KEYS.SALES]);
   }
 
   static getCustomers(): Customer[] {
-    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA[STORAGE_KEYS.CUSTOMERS]) as Customer[];
+    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA[STORAGE_KEYS.CUSTOMERS]);
   }
 
   static getSuppliers(): Supplier[] {
-    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA[STORAGE_KEYS.SUPPLIERS]) as Supplier[];
+    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA[STORAGE_KEYS.SUPPLIERS]);
   }
 
   static getExpenses(): Expense[] {
-    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA[STORAGE_KEYS.EXPENSES]) as Expense[];
+    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA[STORAGE_KEYS.EXPENSES]);
   }
 
   static getSettings(): any {
@@ -112,7 +126,7 @@ export class AppStorageManager {
         throw new Error('Invalid backup file format');
       }
       
-      // Import all data
+      // Import all data with proper type assertions
       if (data.devices) this.saveDevices(data.devices as Device[]);
       if (data.sales) this.saveSales(data.sales as Sale[]);
       if (data.customers) this.saveCustomers(data.customers as Customer[]);

@@ -14,12 +14,12 @@ export const STORAGE_KEYS = {
 
 // Define type-safe interface for default data
 interface DefaultDataType {
-  [STORAGE_KEYS.DEVICES]: Device[];
-  [STORAGE_KEYS.SALES]: Sale[];
-  [STORAGE_KEYS.CUSTOMERS]: Customer[];
-  [STORAGE_KEYS.SUPPLIERS]: Supplier[];
-  [STORAGE_KEYS.EXPENSES]: Expense[];
-  [STORAGE_KEYS.SETTINGS]: {
+  devices: Device[];
+  sales: Sale[];
+  customers: Customer[];
+  suppliers: Supplier[];
+  expenses: Expense[];
+  settings: {
     theme: string;
     lowStockAlert: number;
     currency: string;
@@ -28,12 +28,12 @@ interface DefaultDataType {
 
 // Default data for each collection with proper types
 const DEFAULT_DATA: DefaultDataType = {
-  [STORAGE_KEYS.DEVICES]: [] as Device[],
-  [STORAGE_KEYS.SALES]: [] as Sale[],
-  [STORAGE_KEYS.CUSTOMERS]: [] as Customer[],
-  [STORAGE_KEYS.SUPPLIERS]: [] as Supplier[],
-  [STORAGE_KEYS.EXPENSES]: [] as Expense[],
-  [STORAGE_KEYS.SETTINGS]: {
+  devices: [] as Device[],
+  sales: [] as Sale[],
+  customers: [] as Customer[],
+  suppliers: [] as Supplier[],
+  expenses: [] as Expense[],
+  settings: {
     theme: 'light',
     lowStockAlert: 5,
     currency: 'BRL'
@@ -44,27 +44,27 @@ const DEFAULT_DATA: DefaultDataType = {
 export class AppStorageManager {
   // Get data with type safety
   static getDevices(): Device[] {
-    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA[STORAGE_KEYS.DEVICES]);
+    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA.devices);
   }
 
   static getSales(): Sale[] {
-    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA[STORAGE_KEYS.SALES]);
+    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA.sales);
   }
 
   static getCustomers(): Customer[] {
-    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA[STORAGE_KEYS.CUSTOMERS]);
+    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA.customers);
   }
 
   static getSuppliers(): Supplier[] {
-    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA[STORAGE_KEYS.SUPPLIERS]);
+    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA.suppliers);
   }
 
   static getExpenses(): Expense[] {
-    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA[STORAGE_KEYS.EXPENSES]);
+    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA.expenses);
   }
 
   static getSettings(): any {
-    return StorageManager.get(STORAGE_KEYS.SETTINGS, DEFAULT_DATA[STORAGE_KEYS.SETTINGS]);
+    return StorageManager.get(STORAGE_KEYS.SETTINGS, DEFAULT_DATA.settings);
   }
 
   // Save data with type safety

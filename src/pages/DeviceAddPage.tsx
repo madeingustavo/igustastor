@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useForm } from 'react-hook-form';
@@ -7,9 +8,11 @@ import { useDevices } from '../hooks/useDevices';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronRight } from 'lucide-react';
+import { CalendarIcon, ChevronRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '../hooks/use-mobile';
+import { validateIMEI, validateSerialNumber, validateBatteryHealth } from '../utils/validations';
+import QuickSupplierForm from '../components/suppliers/QuickSupplierForm';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +43,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { IPHONE_MODELS, MODEL_SPECS, CONDITION_OPTIONS } from '../utils/deviceConstants';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Schema for the form validation
 const deviceSchema = z.object({
@@ -50,9 +54,13 @@ const deviceSchema = z.object({
   purchase_price: z.number({ required_error: "Preço de compra é obrigatório" }),
   sale_price: z.number({ required_error: "Preço de venda é obrigatório" }),
   supplier_id: z.string({ required_error: "Fornecedor é obrigatório" }),
-  imei1: z.string({ required_error: "IMEI principal é obrigatório" }),
+  imei1: z.string({ required_error: "IMEI principal é obrigatório" })
+    .min(15, "IMEI deve ter 15 dígitos")
+    .max(15, "IMEI deve ter 15 dígitos")
+    .regex(/^[0-9]{15}$/, "IMEI deve conter apenas números"),
   imei2: z.string().optional(),
-  serial_number: z.string({ required_error: "Número de série é obrigatório" }),
+  serial_number: z.string({ required_error: "Número de série é obrigatório" })
+    .regex(/^[A-Za-z0-9]{12}$/, "Número de série deve conter 12 caracteres alfanuméricos"),
   battery_health: z.string().optional(),
   has_apple_warranty: z.boolean().default(false),
   warranty_date: z.date().optional().nullable(),
@@ -73,6 +81,11 @@ const DeviceAddPage = () => {
   const [suppliers, setSuppliers] = useState(getAllSuppliers());
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [availableStorage, setAvailableStorage] = useState<string[]>([]);
+  
+  // Validation states
+  const [imeiValidation, setImeiValidation] = useState<{ isValid: boolean, message: string } | null>(null);
+  const [serialValidation, setSerialValidation] = useState<{ isValid: boolean, message: string } | null>(null);
+  const [batteryValidation, setBatteryValidation] = useState<{ isValid: boolean, message: string, formattedValue?: string } | null>(null);
 
   // Initialize the form with default values
   const form = useForm<DeviceFormValues>({
@@ -98,6 +111,67 @@ const DeviceAddPage = () => {
 
   // Watch for model changes to update available colors and storage
   const watchedModel = form.watch('model');
+  const imei1 = form.watch('imei1');
+  const serialNumber = form.watch('serial_number');
+  const batteryHealth = form.watch('battery_health');
+  
+  // Validate IMEI when it changes
+  useEffect(() => {
+    if (imei1 && imei1.length === 15) {
+      const result = validateIMEI(imei1);
+      setImeiValidation(result);
+      
+      // If invalid, show validation message in the form
+      if (!result.isValid) {
+        form.setError('imei1', { message: result.message });
+      } else {
+        form.clearErrors('imei1');
+      }
+    } else if (imei1) {
+      setImeiValidation({
+        isValid: false,
+        message: "IMEI deve ter 15 dígitos"
+      });
+    } else {
+      setImeiValidation(null);
+    }
+  }, [imei1, form]);
+  
+  // Validate Serial Number when it changes
+  useEffect(() => {
+    if (serialNumber && serialNumber.length > 0) {
+      const result = validateSerialNumber(serialNumber);
+      setSerialValidation(result);
+      
+      // If invalid, show validation message in the form
+      if (!result.isValid) {
+        form.setError('serial_number', { message: result.message });
+      } else {
+        form.clearErrors('serial_number');
+      }
+    } else {
+      setSerialValidation(null);
+    }
+  }, [serialNumber, form]);
+  
+  // Validate Battery Health when it changes
+  useEffect(() => {
+    if (batteryHealth && batteryHealth.length > 0) {
+      const result = validateBatteryHealth(batteryHealth);
+      setBatteryValidation(result);
+      
+      if (result.isValid && result.formattedValue) {
+        // Auto-format the battery health value
+        form.setValue('battery_health', result.formattedValue);
+      } else if (!result.isValid) {
+        form.setError('battery_health', { message: result.message });
+      } else {
+        form.clearErrors('battery_health');
+      }
+    } else {
+      setBatteryValidation(null);
+    }
+  }, [batteryHealth, form]);
   
   useEffect(() => {
     if (watchedModel && MODEL_SPECS[watchedModel]) {
@@ -125,10 +199,9 @@ const DeviceAddPage = () => {
   const onSubmit = (data: DeviceFormValues) => {
     try {
       // Add the device to the database
-      // Removing the id property since it's generated by the addDevice function
       const newDevice = addDevice({
         ...data,
-        status: 'available',
+        status: 'available' as const,
         _exact_original_date: new Date().toISOString(),
       });
       
@@ -141,6 +214,18 @@ const DeviceAddPage = () => {
       console.error('Erro ao adicionar iPhone:', error);
       toast.error('Erro ao adicionar iPhone. Tente novamente.');
     }
+  };
+
+  // Handle quick supplier form callback
+  const handleSupplierAdded = (supplierId: string) => {
+    // Refresh suppliers list
+    setSuppliers(getAllSuppliers());
+    
+    // Set the new supplier as selected
+    form.setValue('supplier_id', supplierId);
+    
+    // Show success message
+    toast.success('Fornecedor adicionado e selecionado!');
   };
 
   // Handle step navigation
@@ -363,7 +448,10 @@ const DeviceAddPage = () => {
                       name="supplier_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Fornecedor*</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Fornecedor*</FormLabel>
+                            <QuickSupplierForm onSupplierAdded={handleSupplierAdded} />
+                          </div>
                           <Select 
                             onValueChange={field.onChange} 
                             defaultValue={field.value}
@@ -441,6 +529,12 @@ const DeviceAddPage = () => {
                             <FormControl>
                               <Input placeholder="15 dígitos" {...field} />
                             </FormControl>
+                            {imeiValidation && (
+                              <Alert variant={imeiValidation.isValid ? "default" : "destructive"} className="mt-2 py-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{imeiValidation.message}</AlertDescription>
+                              </Alert>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -470,6 +564,12 @@ const DeviceAddPage = () => {
                           <FormControl>
                             <Input placeholder="Ex: C8QJ9Z7KPLFR" {...field} />
                           </FormControl>
+                          {serialValidation && (
+                            <Alert variant={serialValidation.isValid ? "default" : "destructive"} className="mt-2 py-2">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>{serialValidation.message}</AlertDescription>
+                            </Alert>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -484,6 +584,12 @@ const DeviceAddPage = () => {
                           <FormControl>
                             <Input placeholder="Ex: 95%" {...field} />
                           </FormControl>
+                          {batteryValidation && (
+                            <Alert variant={batteryValidation.isValid ? "default" : "destructive"} className="mt-2 py-2">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>{batteryValidation.message}</AlertDescription>
+                            </Alert>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}

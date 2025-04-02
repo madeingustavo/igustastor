@@ -113,12 +113,12 @@ export class AppStorageManager {
       }
       
       // Import all data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key in STORAGE_KEYS) {
-          // @ts-ignore - We know the key is valid
-          StorageManager.save(STORAGE_KEYS[key], value);
-        }
-      });
+      if (data.devices) this.saveDevices(data.devices as Device[]);
+      if (data.sales) this.saveSales(data.sales as Sale[]);
+      if (data.customers) this.saveCustomers(data.customers as Customer[]);
+      if (data.suppliers) this.saveSuppliers(data.suppliers as Supplier[]);
+      if (data.expenses) this.saveExpenses(data.expenses as Expense[]);
+      if (data.settings) this.saveSettings(data.settings);
       
       return true;
     } catch (error) {

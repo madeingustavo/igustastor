@@ -30,23 +30,23 @@ const DEFAULT_DATA = {
 export class AppStorageManager {
   // Get data with type safety
   static getDevices(): Device[] {
-    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA[STORAGE_KEYS.DEVICES]);
+    return StorageManager.get<Device[]>(STORAGE_KEYS.DEVICES, DEFAULT_DATA[STORAGE_KEYS.DEVICES]) as Device[];
   }
 
   static getSales(): Sale[] {
-    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA[STORAGE_KEYS.SALES]);
+    return StorageManager.get<Sale[]>(STORAGE_KEYS.SALES, DEFAULT_DATA[STORAGE_KEYS.SALES]) as Sale[];
   }
 
   static getCustomers(): Customer[] {
-    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA[STORAGE_KEYS.CUSTOMERS]);
+    return StorageManager.get<Customer[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_DATA[STORAGE_KEYS.CUSTOMERS]) as Customer[];
   }
 
   static getSuppliers(): Supplier[] {
-    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA[STORAGE_KEYS.SUPPLIERS]);
+    return StorageManager.get<Supplier[]>(STORAGE_KEYS.SUPPLIERS, DEFAULT_DATA[STORAGE_KEYS.SUPPLIERS]) as Supplier[];
   }
 
   static getExpenses(): Expense[] {
-    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA[STORAGE_KEYS.EXPENSES]);
+    return StorageManager.get<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_DATA[STORAGE_KEYS.EXPENSES]) as Expense[];
   }
 
   static getSettings(): any {

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { format, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { CalendarIcon, Download, Filter, Search } from 'lucide-react';
+import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, subMonths, parseISO } from 'date-fns';
+import { CalendarIcon, Download, Filter, Search, DollarSign, TrendingUp, Briefcase } from 'lucide-react';
 import { useSales } from '@/hooks/useSales';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useDevices } from '@/hooks/useDevices';
@@ -15,6 +15,7 @@ import { SalesChart } from '@/components/reports/SalesChart';
 import { SalesPieChart } from '@/components/reports/SalesPieChart';
 import { TopModelsList } from '@/components/reports/TopModelsList';
 import { DatePickerWithRange } from '@/components/reports/DatePickerWithRange';
+import { DateRange } from 'react-day-picker';
 
 // Date filter options
 const DATE_FILTERS = [
@@ -25,7 +26,7 @@ const DATE_FILTERS = [
 ];
 
 const Reports = () => {
-  const { sales, getTotalSalesAmount, getTotalProfit } = useSales();
+  const { sales, getTotalSalesAmount, getTotalProfit, getMonthlyBillingData } = useSales();
   const { devices, getDeviceById } = useDevices();
   const { suppliers, getSupplierById } = useSuppliers();
 
@@ -33,7 +34,7 @@ const Reports = () => {
   const [dateFilter, setDateFilter] = useState('current-month');
   const [modelFilter, setModelFilter] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [activeTab, setActiveTab] = useState('sales');
 
   // Filtered sales
@@ -50,13 +51,17 @@ const Reports = () => {
     let filtered = [...sales];
     
     // Apply date filter
-    if (dateRange && dateRange.from && dateRange.to) {
+    if (dateRange && dateRange.from) {
       filtered = filtered.filter(sale => {
         const saleDate = new Date(sale.sale_date);
-        return isWithinInterval(saleDate, { 
-          start: dateRange.from, 
-          end: dateRange.to 
-        });
+        if (dateRange.to) {
+          return isWithinInterval(saleDate, { 
+            start: dateRange.from, 
+            end: dateRange.to 
+          });
+        } else {
+          return saleDate >= dateRange.from;
+        }
       });
     } else {
       const today = new Date();
@@ -190,6 +195,46 @@ const Reports = () => {
       profit: data.profit
     }));
   };
+
+  // Get supplier performance data
+  const getSupplierPerformance = () => {
+    const supplierMap = new Map();
+    
+    sales.forEach(sale => {
+      const device = getDeviceById(sale.device_id);
+      if (device && device.supplier_id) {
+        const supplierId = device.supplier_id;
+        if (supplierMap.has(supplierId)) {
+          const current = supplierMap.get(supplierId);
+          supplierMap.set(supplierId, {
+            sales: current.sales + 1,
+            revenue: current.revenue + sale.sale_price,
+            profit: current.profit + sale.profit
+          });
+        } else {
+          supplierMap.set(supplierId, {
+            sales: 1,
+            revenue: sale.sale_price,
+            profit: sale.profit
+          });
+        }
+      }
+    });
+    
+    return Array.from(supplierMap.entries())
+      .map(([supplierId, data]) => {
+        const supplier = getSupplierById(supplierId);
+        return {
+          id: supplierId,
+          name: supplier ? supplier.name : 'Desconhecido',
+          sales: data.sales,
+          revenue: data.revenue,
+          profit: data.profit,
+          profitMargin: (data.profit / data.revenue) * 100
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+  };
   
   // Get sales data for charts
   const getChartData = () => {
@@ -224,6 +269,18 @@ const Reports = () => {
       pieChartData,
       topModels
     };
+  };
+
+  // Get monthly billing data
+  const getMonthlySalesData = () => {
+    const monthlyData = getMonthlyBillingData();
+    
+    return monthlyData.map(item => ({
+      name: item.month,
+      Vendas: item.count,
+      Receita: item.revenue,
+      Lucro: item.profit
+    }));
   };
   
   // Format currency
@@ -398,24 +455,165 @@ const Reports = () => {
           
           <TabsContent value="billing" className="space-y-4 mt-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Faturamento Mensal</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Faturamento Mensal</CardTitle>
+                  <p className="text-sm text-muted-foreground">Receita e lucro dos últimos 12 meses</p>
+                </div>
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Estatísticas de faturamento em breve.</p>
+              <CardContent className="p-0">
+                <div className="h-[400px] w-full">
+                  <SalesChart data={getMonthlySalesData()} />
+                </div>
               </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Faturamento Médio Mensal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(
+                      sales.length > 0
+                        ? sales.reduce((sum, sale) => sum + sale.sale_price, 0) / 12
+                        : 0
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Lucro Médio Mensal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(
+                      sales.length > 0
+                        ? sales.reduce((sum, sale) => sum + sale.profit, 0) / 12
+                        : 0
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Margem de Lucro Média
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {sales.length > 0
+                      ? `${(
+                          (sales.reduce((sum, sale) => sum + sale.profit, 0) /
+                            sales.reduce((sum, sale) => sum + sale.sale_price, 0)) *
+                          100
+                        ).toFixed(1)}%`
+                      : '0%'}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="suppliers" className="space-y-4 mt-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Relatório de Fornecedores</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Relatório de Fornecedores</CardTitle>
+                  <p className="text-sm text-muted-foreground">Desempenho por fornecedor</p>
+                </div>
+                <Briefcase className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Estatísticas de fornecedores em breve.</p>
+                <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs uppercase bg-muted">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">Fornecedor</th>
+                        <th scope="col" className="px-6 py-3">Vendas</th>
+                        <th scope="col" className="px-6 py-3">Receita Total</th>
+                        <th scope="col" className="px-6 py-3">Lucro Total</th>
+                        <th scope="col" className="px-6 py-3">Margem de Lucro</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getSupplierPerformance().map((supplier, index) => (
+                        <tr key={supplier.id} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
+                          <td className="px-6 py-4 font-medium">{supplier.name}</td>
+                          <td className="px-6 py-4">{supplier.sales}</td>
+                          <td className="px-6 py-4">{formatCurrency(supplier.revenue)}</td>
+                          <td className="px-6 py-4">{formatCurrency(supplier.profit)}</td>
+                          <td className="px-6 py-4">{supplier.profitMargin.toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top 5 Fornecedores por Receita</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {getSupplierPerformance().slice(0, 5).map((supplier, index) => (
+                      <div key={supplier.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-3 w-3 rounded-full bg-${['blue', 'green', 'orange', 'red', 'purple'][index % 5]}-500`} />
+                          <div>
+                            <div className="font-medium">{supplier.name}</div>
+                            <div className="text-xs text-muted-foreground">{supplier.sales} vendas</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{formatCurrency(supplier.revenue)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top 5 Fornecedores por Margem de Lucro</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[...getSupplierPerformance()]
+                      .sort((a, b) => b.profitMargin - a.profitMargin)
+                      .slice(0, 5)
+                      .map((supplier, index) => (
+                        <div key={supplier.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-3 w-3 rounded-full bg-${['blue', 'green', 'orange', 'red', 'purple'][index % 5]}-500`} />
+                            <div>
+                              <div className="font-medium">{supplier.name}</div>
+                              <div className="text-xs text-muted-foreground">{supplier.profitMargin.toFixed(1)}% margem</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(supplier.profit)}</div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

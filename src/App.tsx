@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Devices from "./pages/Devices";
 import DeviceAddPage from "./pages/DeviceAddPage";
 import Reports from "./pages/Reports";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -28,6 +30,8 @@ function App() {
             <Route path="/devices/add" element={<DeviceAddPage />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/sales" element={<Reports />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/suppliers" element={<Suppliers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

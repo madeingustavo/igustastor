@@ -59,13 +59,13 @@ const QuickSupplierForm = ({ onSupplierAdded }: QuickSupplierFormProps) => {
   
   const onSubmit = (data: SupplierFormValues) => {
     try {
-      // Add the supplier
+      // Add the supplier with required fields
       const newSupplier = addSupplier({
-        ...data,
-        // These fields are optional in the form but required in the model
+        name: data.name,
+        phone: data.phone,
+        email: data.email || '',
         address: data.address || '',
         notes: data.notes || '',
-        email: data.email || '',
       });
       
       // Reset form

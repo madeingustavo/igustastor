@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Device } from '../types/schema';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 
 export const useDevices = () => {
   const [devices, setDevices] = useState<Device[]>(AppStorageManager.getDevices());
@@ -19,23 +18,12 @@ export const useDevices = () => {
   };
 
   // Add a new device
-  const addDevice = (deviceData: Omit<Device, 'id' | 'created_date' | 'status'>) => {
-    const now = new Date().toISOString();
-    
-    // Format warranty date if provided
-    let formattedWarrantyDate: string | undefined;
-    if (deviceData.warranty_date) {
-      formattedWarrantyDate = new Date(deviceData.warranty_date).toISOString();
-    }
-    
+  const addDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date'>) => {
     const newDevice: Device = {
       ...deviceData,
       id: generateId(),
-      created_date: now,
       status: 'available',
-      original_date: deviceData.original_date || now,
-      _exact_original_date: deviceData._exact_original_date || now,
-      warranty_date: formattedWarrantyDate
+      created_date: new Date().toISOString()
     };
 
     setDevices(prev => [...prev, newDevice]);
@@ -65,30 +53,59 @@ export const useDevices = () => {
   };
 
   // Mark a device as sold
-  const markAsSold = (deviceId: string, saleData: { customer_id: string, sale_price: number, payment_method: string }) => {
-    const device = devices.find(d => d.id === deviceId);
-    if (!device) return null;
-    
-    // Update device status
-    updateDevice(deviceId, { status: 'sold' });
-    
-    // Calculate profit
-    const profit = saleData.sale_price - device.purchase_price;
-    
-    // Create sale record (handled in useSales hook, but returned here for convenience)
-    const saleRecord = {
-      id: generateId(),
-      device_id: deviceId,
-      customer_id: saleData.customer_id,
-      sale_price: saleData.sale_price,
-      profit,
-      sale_date: new Date().toISOString(),
-      created_date: new Date().toISOString(),
-      payment_method: saleData.payment_method as any,
-      status: 'completed' as const
-    };
-    
-    return saleRecord;
+  const markAsSold = (id: string) => {
+    setDevices(prev => 
+      prev.map(device => 
+        device.id === id 
+          ? { ...device, status: 'sold' } 
+          : device
+      )
+    );
+  };
+
+  // Get device by ID
+  const getDeviceById = (id: string) => {
+    return devices.find(device => device.id === id);
+  };
+
+  // Get devices by supplier ID
+  const getDevicesBySupplier = (supplierId: string) => {
+    return devices.filter(device => device.supplier_id === supplierId);
+  };
+
+  // Filter devices
+  const filterDevices = (
+    filters: {
+      status?: 'available' | 'sold' | 'reserved';
+      model?: string;
+      priceMin?: number;
+      priceMax?: number;
+      condition?: string;
+    }
+  ) => {
+    return devices.filter(device => {
+      if (filters.status && device.status !== filters.status) {
+        return false;
+      }
+      
+      if (filters.model && !device.model.toLowerCase().includes(filters.model.toLowerCase())) {
+        return false;
+      }
+      
+      if (filters.priceMin && device.sale_price < filters.priceMin) {
+        return false;
+      }
+      
+      if (filters.priceMax && device.sale_price > filters.priceMax) {
+        return false;
+      }
+      
+      if (filters.condition && device.condition !== filters.condition) {
+        return false;
+      }
+      
+      return true;
+    });
   };
 
   // Get available devices
@@ -101,65 +118,16 @@ export const useDevices = () => {
     return devices.filter(device => device.status === 'sold');
   };
 
-  // Get device by ID
-  const getDeviceById = (id: string) => {
-    return devices.find(device => device.id === id);
-  };
-
-  // Get total inventory value
-  const getTotalInventoryValue = () => {
-    return devices
-      .filter(device => device.status === 'available')
-      .reduce((total, device) => total + device.purchase_price, 0);
-  };
-
-  // Get potential sales value
-  const getPotentialSalesValue = () => {
-    return devices
-      .filter(device => device.status === 'available')
-      .reduce((total, device) => total + device.sale_price, 0);
-  };
-
-  // Get potential profit
-  const getPotentialProfit = () => {
-    return devices
-      .filter(device => device.status === 'available')
-      .reduce((total, device) => total + (device.sale_price - device.purchase_price), 0);
-  };
-
-  // Get available devices count
-  const getAvailableDevicesCount = () => {
-    return devices.filter(device => device.status === 'available').length;
-  };
-
-  // Get oldest devices (in stock for more than 30 days)
-  const getOldDevices = () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    return devices
-      .filter(device => 
-        device.status === 'available' && 
-        new Date(device.created_date) < thirtyDaysAgo
-      )
-      .sort((a, b) => 
-        new Date(a.created_date).getTime() - new Date(b.created_date).getTime()
-      );
-  };
-
   return {
     devices,
     addDevice,
     updateDevice,
     removeDevice,
     markAsSold,
-    getAvailableDevices,
-    getSoldDevices,
     getDeviceById,
-    getTotalInventoryValue,
-    getPotentialSalesValue,
-    getPotentialProfit,
-    getAvailableDevicesCount,
-    getOldDevices
+    getDevicesBySupplier,
+    filterDevices,
+    getAvailableDevices,
+    getSoldDevices
   };
 };

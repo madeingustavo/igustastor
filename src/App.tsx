@@ -8,6 +8,7 @@ import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Devices from "./pages/Devices";
 import DeviceAddPage from "./pages/DeviceAddPage";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/devices" element={<Devices />} />
             <Route path="/devices/add" element={<DeviceAddPage />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/sales" element={<Reports />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

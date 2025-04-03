@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Sale } from '../types/schema';
 import { toast } from 'sonner';
-import { format, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, subMonths, setDate, getMonth, getYear } from 'date-fns';
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>(AppStorageManager.getSales());
@@ -147,6 +147,61 @@ export const useSales = () => {
     return dailyData;
   };
 
+  // Get monthly billing data for the last 12 months
+  const getMonthlyBillingData = () => {
+    const today = new Date();
+    const monthlyData = [];
+    
+    // Create data for the last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = subMonths(today, i);
+      const monthStart = startOfMonth(date);
+      const monthEnd = endOfMonth(date);
+      
+      // Filter sales for this month
+      const monthSales = sales.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        return isWithinInterval(saleDate, { 
+          start: monthStart, 
+          end: monthEnd 
+        });
+      });
+      
+      monthlyData.push({
+        month: format(date, 'MMM/yyyy'),
+        count: monthSales.length,
+        revenue: monthSales.reduce((total, sale) => total + sale.sale_price, 0),
+        profit: monthSales.reduce((total, sale) => total + sale.profit, 0)
+      });
+    }
+    
+    return monthlyData;
+  };
+  
+  // Get sales by device model
+  const getSalesByModel = () => {
+    const modelMap = new Map();
+    
+    sales.forEach(sale => {
+      const deviceId = sale.device_id;
+      // This depends on the integration with the devices hook
+      // You would typically get the device model from the device ID
+      // For now, we'll just use the device ID as a placeholder
+      const model = deviceId;
+      
+      if (modelMap.has(model)) {
+        modelMap.set(model, modelMap.get(model) + 1);
+      } else {
+        modelMap.set(model, 1);
+      }
+    });
+    
+    return Array.from(modelMap.entries()).map(([model, count]) => ({
+      model,
+      count
+    }));
+  };
+
   return {
     sales,
     addSale,
@@ -163,6 +218,8 @@ export const useSales = () => {
     getMonthlySales,
     getMonthlyRevenue,
     getMonthlyProfit,
-    getSalesChartData
+    getSalesChartData,
+    getMonthlyBillingData,
+    getSalesByModel
   };
 };

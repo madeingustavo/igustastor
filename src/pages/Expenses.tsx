@@ -322,9 +322,7 @@ const Expenses = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {availableDevices.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        Nenhum dispositivo disponível
-                      </SelectItem>
+                      <SelectItem value="no-devices">Nenhum dispositivo disponível</SelectItem>
                     ) : (
                       availableDevices.map(device => (
                         <SelectItem key={device.id} value={device.id}>

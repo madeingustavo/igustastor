@@ -142,11 +142,15 @@ const SellDeviceDialog: React.FC<SellDeviceDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} - {customer.phone}
-                          </SelectItem>
-                        ))}
+                        {customers.length > 0 ? (
+                          customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name} - {customer.phone}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-customers">Nenhum cliente cadastrado</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

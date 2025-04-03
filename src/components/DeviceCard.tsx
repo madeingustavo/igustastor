@@ -42,7 +42,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
       <div className="flex flex-col items-center mb-2">
         <div className="text-2xl font-bold mb-1">{batteryHealth}</div>
         <Badge variant="outline" className={`${bgColor} text-xs`}>
-          {batteryValue} - {label}
+          {label}
         </Badge>
       </div>
     );

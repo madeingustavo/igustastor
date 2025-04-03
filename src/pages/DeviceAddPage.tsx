@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useForm } from 'react-hook-form';
@@ -200,7 +199,8 @@ const DeviceAddPage = () => {
         battery_health: data.battery_health || '100%',
         has_apple_warranty: data.has_apple_warranty,
         warranty_date: data.warranty_date,
-        original_date: data.original_date,
+        original_date: data.original_date.toISOString(),
+        _exact_original_date: data.original_date.toISOString(),
         notes: data.notes || '',
       };
       

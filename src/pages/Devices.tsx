@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDevices } from '../hooks/useDevices';
 import { useSuppliers } from '../hooks/useSuppliers';
@@ -35,38 +34,33 @@ import DeviceCard from '../components/DeviceCard';
 import DeviceDetailDialog from '../components/DeviceDetailDialog';
 import SellDeviceDialog from '../components/SellDeviceDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Devices = () => {
   const { devices, updateDevice, getAvailableDevicesCount } = useDevices();
   const { suppliers, getSupplierById } = useSuppliers();
   const { formatCurrency } = useSettings();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('available'); // Default to show only available devices
+  const [statusFilter, setStatusFilter] = useState<string>('available');
   const [sortField, setSortField] = useState<string>('model');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile ? 'cards' : 'table');
   
-  // Dialogs states
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   
-  // Update view mode when device type changes
   useEffect(() => {
     setViewMode(isMobile ? 'cards' : viewMode);
   }, [isMobile]);
   
-  // Filter and sort devices
   const filteredDevices = devices.filter(device => {
-    // Apply status filter
     if (statusFilter !== 'all' && device.status !== statusFilter) {
       return false;
     }
     
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -82,7 +76,6 @@ const Devices = () => {
     return true;
   });
   
-  // Sort filtered devices
   const sortedDevices = [...filteredDevices].sort((a, b) => {
     let comparison = 0;
     
@@ -99,7 +92,6 @@ const Devices = () => {
     return sortDirection === 'asc' ? comparison : -comparison;
   });
   
-  // Toggle sort direction
   const toggleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -109,7 +101,6 @@ const Devices = () => {
     }
   };
   
-  // Format device status
   const formatStatus = (status: string) => {
     switch (status) {
       case 'available':
@@ -123,13 +114,11 @@ const Devices = () => {
     }
   };
   
-  // Get supplier name
   const getSupplierName = (supplierId: string) => {
     const supplier = getSupplierById(supplierId);
     return supplier ? supplier.name : 'N/A';
   };
   
-  // Reset all filters
   const clearFilters = () => {
     setStatusFilter('available');
     setSearchQuery('');
@@ -137,20 +126,16 @@ const Devices = () => {
     setSortDirection('asc');
   };
   
-  // Handle view device details
   const handleViewDetails = (device: Device) => {
     setSelectedDevice(device);
     setDetailsDialogOpen(true);
   };
   
-  // Handle edit device
   const handleEditDevice = (device: Device) => {
-    // Will be implemented in a future update with a form to edit device
     setSelectedDevice(device);
     console.log("Edit device", device.id);
   };
   
-  // Handle sell device
   const handleSellDevice = (device: Device) => {
     setSelectedDevice(device);
     setSellDialogOpen(true);
@@ -175,7 +160,6 @@ const Devices = () => {
         </div>
         
         <div className="bg-card border rounded-lg overflow-hidden">
-          {/* Filters */}
           <div className="p-4 border-b flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -237,7 +221,6 @@ const Devices = () => {
                 Limpar filtros
               </Button>
               
-              {/* View mode toggle */}
               <div className="flex border rounded-md overflow-hidden">
                 <Button
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -259,14 +242,12 @@ const Devices = () => {
             </div>
           </div>
           
-          {/* View Modes */}
           <Tabs defaultValue={viewMode} value={viewMode} onValueChange={(val) => setViewMode(val as 'table' | 'cards')}>
             <TabsList className="hidden">
               <TabsTrigger value="table">Tabela</TabsTrigger>
               <TabsTrigger value="cards">Cards</TabsTrigger>
             </TabsList>
             
-            {/* Table View */}
             <TabsContent value="table" className="mt-0">
               <div className="overflow-x-auto">
                 <Table>
@@ -341,7 +322,6 @@ const Devices = () => {
               </div>
             </TabsContent>
             
-            {/* Card View */}
             <TabsContent value="cards" className="mt-0">
               <div className="p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -365,21 +345,18 @@ const Devices = () => {
             </TabsContent>
           </Tabs>
           
-          {/* Footer with summary */}
           <div className="p-4 border-t text-sm text-muted-foreground">
             {filteredDevices.length} dispositivos encontrados
           </div>
         </div>
       </div>
       
-      {/* Device Detail Dialog */}
       <DeviceDetailDialog 
         device={selectedDevice} 
         open={detailsDialogOpen} 
         onOpenChange={setDetailsDialogOpen} 
       />
       
-      {/* Sell Device Dialog */}
       <SellDeviceDialog 
         device={selectedDevice} 
         open={sellDialogOpen} 

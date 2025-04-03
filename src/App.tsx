@@ -11,6 +11,8 @@ import DeviceAddPage from "./pages/DeviceAddPage";
 import Reports from "./pages/Reports";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
+import Sales from "./pages/Sales";
+import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
             <Route path="/devices/add" element={<DeviceAddPage />} />
             <Route path="/devices/:id" element={<Devices />} /> {/* For future device detail view */}
             <Route path="/devices/edit/:id" element={<DeviceAddPage />} /> {/* For future device edit */}
+            <Route path="/sales" element={<Sales />} />
+            <Route path="/expenses" element={<Expenses />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/suppliers" element={<Suppliers />} />

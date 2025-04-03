@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>(AppStorageManager.getCustomers());
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
 
   // Sync with localStorage whenever customers change
   useEffect(() => {
@@ -51,6 +52,36 @@ export const useCustomers = () => {
     toast.info(`Cliente ${customer.name} removido.`);
   };
 
+  // Remove multiple customers
+  const removeMultipleCustomers = (ids: string[]) => {
+    if (ids.length === 0) return;
+    
+    setCustomers(prev => prev.filter(customer => !ids.includes(customer.id)));
+    toast.info(`${ids.length} cliente(s) removidos.`);
+    setSelectedCustomers([]);
+  };
+
+  // Toggle customer selection
+  const toggleCustomerSelection = (id: string) => {
+    setSelectedCustomers(prev => 
+      prev.includes(id) ? prev.filter(customerId => customerId !== id) : [...prev, id]
+    );
+  };
+
+  // Select all customers
+  const selectAllCustomers = () => {
+    if (selectedCustomers.length === customers.length) {
+      setSelectedCustomers([]);
+    } else {
+      setSelectedCustomers(customers.map(customer => customer.id));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedCustomers([]);
+  };
+
   // Get customer by ID
   const getCustomerById = (id: string) => {
     return customers.find(customer => customer.id === id);
@@ -75,9 +106,14 @@ export const useCustomers = () => {
 
   return {
     customers,
+    selectedCustomers,
     addCustomer,
     updateCustomer,
     removeCustomer,
+    removeMultipleCustomers,
+    toggleCustomerSelection,
+    selectAllCustomers,
+    clearSelection,
     getCustomerById,
     getAllCustomers,
     searchCustomers

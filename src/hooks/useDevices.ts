@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Device } from '../types/schema';
@@ -5,6 +6,7 @@ import { toast } from 'sonner';
 
 export const useDevices = () => {
   const [devices, setDevices] = useState<Device[]>(AppStorageManager.getDevices());
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
 
   // Sync with localStorage whenever devices change
   useEffect(() => {
@@ -25,12 +27,18 @@ export const useDevices = () => {
       created_date: new Date().toISOString()
     };
 
-    if (deviceData.warranty_date instanceof Date) {
-      newDevice.warranty_date = deviceData.warranty_date.toISOString();
+    // Handle Date objects by converting them to strings
+    if (deviceData.warranty_date) {
+      newDevice.warranty_date = typeof deviceData.warranty_date === 'object' 
+        ? deviceData.warranty_date.toISOString() 
+        : deviceData.warranty_date;
     }
-    if (deviceData.original_date instanceof Date) {
-      newDevice.original_date = deviceData.original_date.toISOString();
-      newDevice._exact_original_date = deviceData.original_date;
+    
+    if (deviceData.original_date) {
+      newDevice.original_date = typeof deviceData.original_date === 'object' 
+        ? deviceData.original_date.toISOString() 
+        : deviceData.original_date;
+      newDevice._exact_original_date = deviceData.original_date.toString();
     }
 
     setDevices(prev => [...prev, newDevice]);
@@ -57,6 +65,36 @@ export const useDevices = () => {
     
     setDevices(prev => prev.filter(device => device.id !== id));
     toast.info(`Dispositivo ${device.model} removido.`);
+  };
+
+  // Remove multiple devices
+  const removeMultipleDevices = (ids: string[]) => {
+    if (ids.length === 0) return;
+    
+    setDevices(prev => prev.filter(device => !ids.includes(device.id)));
+    toast.info(`${ids.length} dispositivo(s) removidos.`);
+    setSelectedDevices([]);
+  };
+
+  // Toggle device selection
+  const toggleDeviceSelection = (id: string) => {
+    setSelectedDevices(prev => 
+      prev.includes(id) ? prev.filter(deviceId => deviceId !== id) : [...prev, id]
+    );
+  };
+
+  // Select all devices
+  const selectAllDevices = () => {
+    if (selectedDevices.length === devices.length) {
+      setSelectedDevices([]);
+    } else {
+      setSelectedDevices(devices.map(device => device.id));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedDevices([]);
   };
 
   // Mark a device as sold
@@ -158,9 +196,14 @@ export const useDevices = () => {
 
   return {
     devices,
+    selectedDevices,
     addDevice,
     updateDevice,
     removeDevice,
+    removeMultipleDevices,
+    toggleDeviceSelection,
+    selectAllDevices,
+    clearSelection,
     markAsSold,
     getDeviceById,
     getDevicesBySupplier,

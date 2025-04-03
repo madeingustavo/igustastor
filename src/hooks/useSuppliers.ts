@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 export const useSuppliers = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>(AppStorageManager.getSuppliers());
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
 
   // Sync with localStorage whenever suppliers change
   useEffect(() => {
@@ -51,6 +52,36 @@ export const useSuppliers = () => {
     toast.info(`Fornecedor ${supplier.name} removido.`);
   };
 
+  // Remove multiple suppliers
+  const removeMultipleSuppliers = (ids: string[]) => {
+    if (ids.length === 0) return;
+    
+    setSuppliers(prev => prev.filter(supplier => !ids.includes(supplier.id)));
+    toast.info(`${ids.length} fornecedor(es) removidos.`);
+    setSelectedSuppliers([]);
+  };
+
+  // Toggle supplier selection
+  const toggleSupplierSelection = (id: string) => {
+    setSelectedSuppliers(prev => 
+      prev.includes(id) ? prev.filter(supplierId => supplierId !== id) : [...prev, id]
+    );
+  };
+
+  // Select all suppliers
+  const selectAllSuppliers = () => {
+    if (selectedSuppliers.length === suppliers.length) {
+      setSelectedSuppliers([]);
+    } else {
+      setSelectedSuppliers(suppliers.map(supplier => supplier.id));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedSuppliers([]);
+  };
+
   // Get supplier by ID
   const getSupplierById = (id: string) => {
     return suppliers.find(supplier => supplier.id === id);
@@ -75,9 +106,14 @@ export const useSuppliers = () => {
 
   return {
     suppliers,
+    selectedSuppliers,
     addSupplier,
     updateSupplier,
     removeSupplier,
+    removeMultipleSuppliers,
+    toggleSupplierSelection,
+    selectAllSuppliers,
+    clearSelection,
     getSupplierById,
     getAllSuppliers,
     searchSuppliers

@@ -7,6 +7,7 @@ import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>(AppStorageManager.getExpenses());
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
 
   // Sync with localStorage whenever expenses change
   useEffect(() => {
@@ -46,6 +47,36 @@ export const useExpenses = () => {
   const removeExpense = (id: string) => {
     setExpenses(prev => prev.filter(expense => expense.id !== id));
     toast.info('Despesa removida.');
+  };
+
+  // Remove multiple expenses
+  const removeMultipleExpenses = (ids: string[]) => {
+    if (ids.length === 0) return;
+    
+    setExpenses(prev => prev.filter(expense => !ids.includes(expense.id)));
+    toast.info(`${ids.length} despesa(s) removidas.`);
+    setSelectedExpenses([]);
+  };
+
+  // Toggle expense selection
+  const toggleExpenseSelection = (id: string) => {
+    setSelectedExpenses(prev => 
+      prev.includes(id) ? prev.filter(expenseId => expenseId !== id) : [...prev, id]
+    );
+  };
+
+  // Select all expenses
+  const selectAllExpenses = () => {
+    if (selectedExpenses.length === expenses.length) {
+      setSelectedExpenses([]);
+    } else {
+      setSelectedExpenses(expenses.map(expense => expense.id));
+    }
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedExpenses([]);
   };
 
   // Get expense by ID
@@ -126,9 +157,14 @@ export const useExpenses = () => {
 
   return {
     expenses,
+    selectedExpenses,
     addExpense,
     updateExpense,
     removeExpense,
+    removeMultipleExpenses,
+    toggleExpenseSelection,
+    selectAllExpenses,
+    clearSelection,
     getExpenseById,
     getExpensesByDeviceId,
     getExpensesByCategory,

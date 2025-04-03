@@ -28,6 +28,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/devices" element={<Devices />} />
             <Route path="/devices/add" element={<DeviceAddPage />} />
+            <Route path="/devices/:id" element={<Devices />} /> {/* For future device detail view */}
+            <Route path="/devices/edit/:id" element={<DeviceAddPage />} /> {/* For future device edit */}
             <Route path="/reports" element={<Reports />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/suppliers" element={<Suppliers />} />

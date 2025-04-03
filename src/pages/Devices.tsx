@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDevices } from '../hooks/useDevices';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { Link } from 'react-router-dom';
-import { Search, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { Search, Plus, Filter, SortAsc, SortDesc, List, Grid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,16 +30,34 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useSettings } from '../hooks/useSettings';
 import Layout from '../components/Layout';
+import { Device } from '../types/schema';
+import DeviceCard from '../components/DeviceCard';
+import DeviceDetailDialog from '../components/DeviceDetailDialog';
+import SellDeviceDialog from '../components/SellDeviceDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMobile } from '@/hooks/use-mobile';
 
 const Devices = () => {
-  const { devices, getAvailableDevicesCount } = useDevices();
+  const { devices, updateDevice, getAvailableDevicesCount } = useDevices();
   const { suppliers, getSupplierById } = useSuppliers();
   const { formatCurrency } = useSettings();
+  const isMobile = useMobile();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('available'); // Default to show only available devices
   const [sortField, setSortField] = useState<string>('model');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile ? 'cards' : 'table');
+  
+  // Dialogs states
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [sellDialogOpen, setSellDialogOpen] = useState(false);
+  
+  // Update view mode when device type changes
+  useEffect(() => {
+    setViewMode(isMobile ? 'cards' : viewMode);
+  }, [isMobile]);
   
   // Filter and sort devices
   const filteredDevices = devices.filter(device => {
@@ -55,7 +73,9 @@ const Devices = () => {
         device.model.toLowerCase().includes(query) ||
         device.color.toLowerCase().includes(query) ||
         device.storage.toLowerCase().includes(query) ||
-        device.serial_number.toLowerCase().includes(query)
+        device.serial_number.toLowerCase().includes(query) ||
+        (device.imei1 && device.imei1.toLowerCase().includes(query)) ||
+        (device.imei2 && device.imei2.toLowerCase().includes(query))
       );
     }
     
@@ -108,6 +128,33 @@ const Devices = () => {
     const supplier = getSupplierById(supplierId);
     return supplier ? supplier.name : 'N/A';
   };
+  
+  // Reset all filters
+  const clearFilters = () => {
+    setStatusFilter('available');
+    setSearchQuery('');
+    setSortField('model');
+    setSortDirection('asc');
+  };
+  
+  // Handle view device details
+  const handleViewDetails = (device: Device) => {
+    setSelectedDevice(device);
+    setDetailsDialogOpen(true);
+  };
+  
+  // Handle edit device
+  const handleEditDevice = (device: Device) => {
+    // Will be implemented in a future update with a form to edit device
+    setSelectedDevice(device);
+    console.log("Edit device", device.id);
+  };
+  
+  // Handle sell device
+  const handleSellDevice = (device: Device) => {
+    setSelectedDevice(device);
+    setSellDialogOpen(true);
+  };
 
   return (
     <Layout>
@@ -122,7 +169,7 @@ const Devices = () => {
           <Button asChild>
             <Link to="/devices/add">
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Dispositivo
+              Novo iPhone
             </Link>
           </Button>
         </div>
@@ -133,13 +180,13 @@ const Devices = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar dispositivos..."
+                placeholder="Buscar por modelo, cor, IMEI..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filtrar por status" />
@@ -185,64 +232,159 @@ const Devices = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              
+              <Button variant="outline" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
+              
+              {/* View mode toggle */}
+              <div className="flex border rounded-md overflow-hidden">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => setViewMode('cards')}
+                  className="rounded-none"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Especificações</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Preço de Compra</TableHead>
-                  <TableHead>Preço de Venda</TableHead>
-                  <TableHead>Lucro Estimado</TableHead>
-                  <TableHead>Data de Entrada</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedDevices.length > 0 ? (
-                  sortedDevices.map((device) => (
-                    <TableRow key={device.id}>
-                      <TableCell className="font-medium">{device.model}</TableCell>
-                      <TableCell>
-                        {device.storage}, {device.color}, {device.condition}
-                      </TableCell>
-                      <TableCell>{formatStatus(device.status)}</TableCell>
-                      <TableCell>{getSupplierName(device.supplier_id)}</TableCell>
-                      <TableCell>{formatCurrency(device.purchase_price)}</TableCell>
-                      <TableCell>{formatCurrency(device.sale_price)}</TableCell>
-                      <TableCell>
-                        {formatCurrency(device.sale_price - device.purchase_price)}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(device.created_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link to={`/devices/${device.id}`}>
-                            Ver Detalhes
-                          </Link>
-                        </Button>
-                      </TableCell>
+          {/* View Modes */}
+          <Tabs defaultValue={viewMode} value={viewMode} onValueChange={(val) => setViewMode(val as 'table' | 'cards')}>
+            <TabsList className="hidden">
+              <TabsTrigger value="table">Tabela</TabsTrigger>
+              <TabsTrigger value="cards">Cards</TabsTrigger>
+            </TabsList>
+            
+            {/* Table View */}
+            <TabsContent value="table" className="mt-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Modelo</TableHead>
+                      <TableHead>Especificações</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Bateria</TableHead>
+                      <TableHead>Fornecedor</TableHead>
+                      <TableHead>Preço de Venda</TableHead>
+                      <TableHead>Data de Entrada</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                  </TableHeader>
+                  <TableBody>
+                    {sortedDevices.length > 0 ? (
+                      sortedDevices.map((device) => (
+                        <TableRow key={device.id}>
+                          <TableCell className="font-medium">{device.model}</TableCell>
+                          <TableCell>
+                            {device.storage}, {device.color}, {device.condition}
+                          </TableCell>
+                          <TableCell>{formatStatus(device.status)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={
+                              (device.battery_health && parseInt(device.battery_health) >= 80)
+                                ? "bg-green-100 text-green-800"
+                                : (device.battery_health && parseInt(device.battery_health) >= 50)
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }>
+                              {device.battery_health || 'N/A'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getSupplierName(device.supplier_id)}</TableCell>
+                          <TableCell>{formatCurrency(device.sale_price)}</TableCell>
+                          <TableCell>
+                            {new Date(device.created_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleViewDetails(device)}>
+                                Ver
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEditDevice(device)}>
+                                Editar
+                              </Button>
+                              {device.status === 'available' && (
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  onClick={() => handleSellDevice(device)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Vender
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="h-24 text-center">
+                          Nenhum dispositivo encontrado.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            {/* Card View */}
+            <TabsContent value="cards" className="mt-0">
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sortedDevices.length > 0 ? (
+                    sortedDevices.map((device) => (
+                      <DeviceCard 
+                        key={device.id}
+                        device={device}
+                        onViewDetails={handleViewDetails}
+                        onEditDevice={handleEditDevice}
+                        onSellDevice={handleSellDevice}
+                      />
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 text-center text-muted-foreground">
                       Nenhum dispositivo encontrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          {/* Footer with summary */}
+          <div className="p-4 border-t text-sm text-muted-foreground">
+            {filteredDevices.length} dispositivos encontrados
           </div>
         </div>
       </div>
+      
+      {/* Device Detail Dialog */}
+      <DeviceDetailDialog 
+        device={selectedDevice} 
+        open={detailsDialogOpen} 
+        onOpenChange={setDetailsDialogOpen} 
+      />
+      
+      {/* Sell Device Dialog */}
+      <SellDeviceDialog 
+        device={selectedDevice} 
+        open={sellDialogOpen} 
+        onOpenChange={setSellDialogOpen} 
+      />
     </Layout>
   );
 };

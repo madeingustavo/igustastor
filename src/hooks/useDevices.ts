@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Device } from '../types/schema';
@@ -25,6 +24,14 @@ export const useDevices = () => {
       status: 'available',
       created_date: new Date().toISOString()
     };
+
+    if (deviceData.warranty_date instanceof Date) {
+      newDevice.warranty_date = deviceData.warranty_date.toISOString();
+    }
+    if (deviceData.original_date instanceof Date) {
+      newDevice.original_date = deviceData.original_date.toISOString();
+      newDevice._exact_original_date = deviceData.original_date;
+    }
 
     setDevices(prev => [...prev, newDevice]);
     toast.success(`Dispositivo ${newDevice.model} adicionado com sucesso!`);

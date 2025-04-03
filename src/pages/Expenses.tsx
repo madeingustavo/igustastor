@@ -16,9 +16,8 @@ import {
 } from '@/components/ui/select';
 import { Expense, Device } from '../types/schema';
 import { 
-  PlusIcon, DotsHorizontalIcon, TrashIcon, 
-  Cross2Icon, CheckIcon 
-} from '@radix-ui/react-icons';
+  Plus, MoreHorizontal, Trash, X, Check 
+} from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -147,8 +146,7 @@ const Expenses = () => {
     
     addExpense({
       ...newExpense,
-      date: date.toISOString(),
-      id: '',
+      date: date.toISOString()
     });
     
     // Reset form
@@ -177,7 +175,7 @@ const Expenses = () => {
               Exportar CSV
             </Button>
             <Button onClick={() => setShowNewExpenseDialog(true)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               Nova Despesa
             </Button>
           </div>
@@ -223,7 +221,7 @@ const Expenses = () => {
               onClick={deleteSelectedExpenses}
               className="ml-auto"
             >
-              <TrashIcon className="mr-2 h-4 w-4" />
+              <Trash className="mr-2 h-4 w-4" />
               Excluir Selecionados ({selectedExpenses.length})
             </Button>
           )}
@@ -283,12 +281,12 @@ const Expenses = () => {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <DotsHorizontalIcon className="h-4 w-4" />
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => removeExpense(expense.id)}>
-                              <TrashIcon className="mr-2 h-4 w-4" />
+                              <Trash className="mr-2 h-4 w-4" />
                               Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>

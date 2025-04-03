@@ -5,7 +5,7 @@ import { Sale } from '../types/schema';
 import { useCustomers } from '../hooks/useCustomers';
 import { useDevices } from '../hooks/useDevices';
 import { useSettings } from '../hooks/useSettings';
-import { ReloadIcon, TrashIcon } from '@radix-ui/react-icons';
+import { RefreshCw, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,7 +87,7 @@ export default function SaleDetailsDialog({
                 className="flex items-center text-orange-500 border-orange-500"
                 onClick={() => onCancelSale(sale.id)}
               >
-                <ReloadIcon className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Cancelar Venda
               </Button>
               
@@ -99,7 +99,7 @@ export default function SaleDetailsDialog({
                   onOpenChange(false);
                 }}
               >
-                <TrashIcon className="mr-2 h-4 w-4" />
+                <Trash className="mr-2 h-4 w-4" />
                 Excluir Venda
               </Button>
             </div>

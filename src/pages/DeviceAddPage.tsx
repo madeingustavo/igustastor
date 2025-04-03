@@ -198,9 +198,9 @@ const DeviceAddPage = () => {
         serial_number: data.serial_number,
         battery_health: data.battery_health || '100%',
         has_apple_warranty: data.has_apple_warranty,
-        warranty_date: data.warranty_date,
-        original_date: data.original_date.toISOString(),
-        _exact_original_date: data.original_date.toISOString(),
+        warranty_date: data.warranty_date ? data.warranty_date.toISOString() : undefined,
+        original_date: data.original_date,
+        _exact_original_date: data.original_date.toString(),
         notes: data.notes || '',
       };
       

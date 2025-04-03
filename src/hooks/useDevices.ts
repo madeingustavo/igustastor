@@ -29,16 +29,20 @@ export const useDevices = () => {
 
     // Handle Date objects by converting them to strings
     if (deviceData.warranty_date) {
-      newDevice.warranty_date = typeof deviceData.warranty_date === 'object' 
+      newDevice.warranty_date = typeof deviceData.warranty_date === 'object' && deviceData.warranty_date !== null
         ? deviceData.warranty_date.toISOString() 
         : deviceData.warranty_date;
     }
     
     if (deviceData.original_date) {
-      newDevice.original_date = typeof deviceData.original_date === 'object' 
+      newDevice.original_date = typeof deviceData.original_date === 'object' && deviceData.original_date !== null
         ? deviceData.original_date.toISOString() 
         : deviceData.original_date;
-      newDevice._exact_original_date = deviceData.original_date.toString();
+      
+      // Make sure _exact_original_date is always a string
+      newDevice._exact_original_date = typeof deviceData.original_date === 'object' && deviceData.original_date !== null
+        ? deviceData.original_date.toString()
+        : String(deviceData.original_date);
     }
 
     setDevices(prev => [...prev, newDevice]);

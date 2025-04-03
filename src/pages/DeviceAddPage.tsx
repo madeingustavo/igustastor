@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useForm } from 'react-hook-form';
@@ -184,10 +185,26 @@ const DeviceAddPage = () => {
 
   const onSubmit = (data: DeviceFormValues) => {
     try {
-      const newDevice = addDevice({
-        ...data,
-        _exact_original_date: new Date().toISOString(),
-      });
+      // Create a fully valid device object with all required fields
+      const deviceData = {
+        model: data.model,
+        color: data.color,
+        storage: data.storage,
+        condition: data.condition,
+        purchase_price: data.purchase_price,
+        sale_price: data.sale_price,
+        supplier_id: data.supplier_id,
+        imei1: data.imei1,
+        imei2: data.imei2 || '',
+        serial_number: data.serial_number,
+        battery_health: data.battery_health || '100%',
+        has_apple_warranty: data.has_apple_warranty,
+        warranty_date: data.warranty_date,
+        original_date: data.original_date,
+        notes: data.notes || '',
+      };
+      
+      const newDevice = addDevice(deviceData);
       
       toast.success('iPhone adicionado com sucesso!');
       

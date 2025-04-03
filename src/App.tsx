@@ -29,7 +29,6 @@ function App() {
             <Route path="/devices" element={<Devices />} />
             <Route path="/devices/add" element={<DeviceAddPage />} />
             <Route path="/reports" element={<Reports />} />
-            <Route path="/sales" element={<Reports />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="*" element={<NotFound />} />

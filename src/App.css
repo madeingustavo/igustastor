@@ -71,4 +71,73 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+  
+  /* Improved tap targets for mobile */
+  button, 
+  a[role="button"], 
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Fix for bottom sheet content */
+  .sheet-content-bottom {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  /* Better spacing for mobile lists */
+  .mobile-list-item {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Quick actions bar for mobile */
+  .mobile-actions-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    padding: 0.75rem 1rem;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 40;
+    display: flex;
+    justify-content: space-around;
+  }
+  
+  /* Safari bottom safe area padding */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar customization for non-mobile */
+@media (min-width: 641px) {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

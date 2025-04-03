@@ -2,9 +2,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
-import { Moon, Sun, Package, Users, TrendingUp, Settings, FileText, DollarSign, Home, Truck, Menu, X, LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Moon, Sun, Package, Users, TrendingUp, Settings, FileText, DollarSign, Home, Truck, Menu, X, LogOut, Download, Upload } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Separator } from '@/components/ui/separator';
 import { useSettings } from '../hooks/useSettings';
@@ -17,6 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [theme, setTheme] = useTheme();
   const location = useLocation();
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -64,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const NavLink = ({ item }: { item: typeof menuItems[0] }) => (
+  const NavLink = ({ item, onClick }: { item: typeof menuItems[0], onClick?: () => void }) => (
     <Link 
       to={item.path} 
       className={`flex items-center px-3 py-2 rounded-md text-sm ${
@@ -72,6 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           ? 'bg-primary/10 text-primary font-medium' 
           : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
       }`}
+      onClick={onClick}
     >
       <item.icon className="h-4 w-4 mr-2" />
       {item.name}
@@ -89,7 +92,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="md:hidden">
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
+                  <span className="sr-only">Menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
@@ -101,7 +104,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="py-4">
                   <nav className="flex flex-col gap-1 px-2">
                     {menuItems.map((item) => (
-                      <NavLink key={item.path} item={item} />
+                      <SheetClose asChild key={item.path}>
+                        <NavLink item={item} />
+                      </SheetClose>
                     ))}
                   </nav>
                 </div>
@@ -109,11 +114,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="p-4">
                   <div className="flex flex-col gap-2">
                     <Button onClick={handleExportData} variant="outline" size="sm" className="justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4 mr-2" />
                       Exportar Dados
                     </Button>
                     <Button onClick={handleImportClick} variant="outline" size="sm" className="justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Upload className="h-4 w-4 mr-2" />
                       Importar Dados
                     </Button>
                   </div>
@@ -140,7 +145,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ) : (
                 <Sun className="h-5 w-5" />
               )}
-              <span className="sr-only">Toggle theme</span>
+              <span className="sr-only">Alternar tema</span>
             </Button>
             
             {/* More menu for desktop */}
@@ -156,25 +161,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <h2 className="text-lg font-semibold">Menu</h2>
                   <nav className="flex flex-col gap-2">
                     {menuItems.slice(5).map((item) => (
-                      <Link 
-                        key={item.path} 
-                        to={item.path} 
-                        className="flex items-center text-sm px-3 py-2 rounded-md hover:bg-accent"
-                      >
-                        <item.icon className="h-4 w-4 mr-2" />
-                        {item.name}
-                      </Link>
+                      <SheetClose asChild key={item.path}>
+                        <Link 
+                          to={item.path} 
+                          className="flex items-center text-sm px-3 py-2 rounded-md hover:bg-accent"
+                        >
+                          <item.icon className="h-4 w-4 mr-2" />
+                          {item.name}
+                        </Link>
+                      </SheetClose>
                     ))}
                   </nav>
                   <Separator />
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Dados</h3>
                     <Button onClick={handleExportData} variant="outline" size="sm" className="w-full justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4 mr-2" />
                       Exportar Dados
                     </Button>
                     <Button onClick={handleImportClick} variant="outline" size="sm" className="w-full justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Upload className="h-4 w-4 mr-2" />
                       Importar Dados
                     </Button>
                     <input 
@@ -199,7 +205,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Footer */}
       <footer className="py-4 border-t px-4 mt-auto">
-        <div className="container flex justify-between text-sm text-muted-foreground">
+        <div className="container flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground gap-2 md:gap-0">
           <p>&copy; {new Date().getFullYear()} {settings.companyName}</p>
           <p className="text-xs">Sistema de Gestão de Vendas de iPhones</p>
         </div>

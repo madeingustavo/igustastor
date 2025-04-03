@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { useExpenses } from '../hooks/useExpenses';
 import { useDevices } from '../hooks/useDevices';
 import { useSettings } from '../hooks/useSettings';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Table, TableBody, TableCell, 
   TableHead, TableHeader, TableRow 
@@ -16,7 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Expense, Device } from '../types/schema';
 import { 
-  Plus, MoreHorizontal, Trash, X, Check 
+  Plus, MoreHorizontal, Trash, X, Check, Search, Filter, 
+  Calendar as CalendarIcon, Tag, Download, FileText
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -36,9 +38,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Expenses = () => {
   const { 
@@ -50,11 +59,13 @@ const Expenses = () => {
   } = useExpenses();
   const { devices, getDeviceById } = useDevices();
   const { formatCurrency } = useSettings();
+  const isMobile = useIsMobile();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [deviceFilter, setDeviceFilter] = useState('all');
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
   const [showNewExpenseDialog, setShowNewExpenseDialog] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   
   // New expense form state
   const [newExpense, setNewExpense] = useState({
@@ -163,20 +174,29 @@ const Expenses = () => {
   
   // Get available devices (only show available devices in the dropdown)
   const availableDevices = devices.filter(device => device.status === 'available');
+
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDeviceFilter('all');
+  };
   
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Gerenciador de Despesas</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Despesas</h1>
           
           <div className="flex gap-2">
-            <Button variant="outline">
-              Exportar CSV
-            </Button>
+            {!isMobile && (
+              <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Exportar CSV
+              </Button>
+            )}
             <Button onClick={() => setShowNewExpenseDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Nova Despesa
+              {isMobile ? "Nova" : "Nova Despesa"}
             </Button>
           </div>
         </div>
@@ -188,96 +208,188 @@ const Expenses = () => {
           <p className="text-sm text-gray-500">{filteredExpenses.length} despesas registradas</p>
         </div>
         
-        {/* Filters and Actions */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className="w-full md:w-auto flex-1">
-            <Input
-              placeholder="Buscar despesas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {/* Filters - Desktop */}
+        {!isMobile && (
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar despesas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className="w-full md:w-80">
+              <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os dispositivos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os dispositivos</SelectItem>
+                  {devices.map(device => (
+                    <SelectItem key={device.id} value={device.id}>
+                      {device.model} ({device.color}, {device.storage})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedExpenses.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={deleteSelectedExpenses}
+                className="ml-auto"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Excluir Selecionados ({selectedExpenses.length})
+              </Button>
+            )}
           </div>
-          
-          <div className="w-full md:w-80">
-            <Select value={deviceFilter} onValueChange={setDeviceFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os dispositivos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os dispositivos</SelectItem>
-                {devices.map(device => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.model} ({device.color}, {device.storage})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {selectedExpenses.length > 0 && (
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={deleteSelectedExpenses}
-              className="ml-auto"
-            >
-              <Trash className="mr-2 h-4 w-4" />
-              Excluir Selecionados ({selectedExpenses.length})
-            </Button>
-          )}
-        </div>
+        )}
         
-        {/* Expenses Table */}
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox 
-                    checked={
-                      filteredExpenses.length > 0 && 
-                      selectedExpenses.length === filteredExpenses.length
-                    }
-                    onCheckedChange={selectAllExpenses}
-                    aria-label="Select all"
-                  />
-                </TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Dispositivo</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredExpenses.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    Nenhuma despesa encontrada
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredExpenses.map((expense) => {
-                  const device = getDeviceById(expense.device_id);
+        {/* Filters - Mobile */}
+        {isMobile && (
+          <div className="flex gap-2 mb-6">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input 
+                placeholder="Buscar..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchTerm && (
+                <button 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+            
+            <Sheet open={showFilterSheet} onOpenChange={setShowFilterSheet}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10">
+                  <Filter size={18} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh]">
+                <SheetHeader>
+                  <SheetTitle>Filtrar Despesas</SheetTitle>
+                </SheetHeader>
+                <div className="py-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Dispositivo</Label>
+                    <Select value={deviceFilter} onValueChange={(value) => {
+                      setDeviceFilter(value);
+                      setShowFilterSheet(false);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os dispositivos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os dispositivos</SelectItem>
+                        {devices.map(device => (
+                          <SelectItem key={device.id} value={device.id}>
+                            {device.model} ({device.color})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
-                  return (
-                    <TableRow key={expense.id}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={selectedExpenses.includes(expense.id)}
-                          onCheckedChange={() => toggleExpenseSelection(expense.id)}
-                          aria-label={`Select expense ${expense.id}`}
-                        />
-                      </TableCell>
-                      <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{device?.model || 'N/A'}</TableCell>
-                      <TableCell>{expense.description}</TableCell>
-                      <TableCell>{expense.category}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(expense.amount)}
-                      </TableCell>
-                      <TableCell>
+                  {(deviceFilter !== 'all' || searchTerm) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        clearFilters();
+                        setShowFilterSheet(false);
+                      }}
+                      className="w-full"
+                    >
+                      <X size={16} className="mr-2" />
+                      Limpar Filtros
+                    </Button>
+                  )}
+                  
+                  {selectedExpenses.length > 0 && (
+                    <Button 
+                      variant="destructive"
+                      onClick={() => {
+                        deleteSelectedExpenses();
+                        setShowFilterSheet(false);
+                      }}
+                      className="w-full"
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      Excluir Selecionados ({selectedExpenses.length})
+                    </Button>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            
+            {selectedExpenses.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="icon"
+                onClick={deleteSelectedExpenses}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+        
+        {/* Mobile Expenses List */}
+        {isMobile && (
+          <div className="space-y-3 mb-6">
+            {filteredExpenses.length === 0 ? (
+              <div className="text-center py-8 bg-card border rounded-lg">
+                <p className="text-muted-foreground">Nenhuma despesa encontrada</p>
+              </div>
+            ) : (
+              filteredExpenses.map((expense) => {
+                const device = getDeviceById(expense.device_id);
+                const isSelected = selectedExpenses.includes(expense.id);
+                
+                return (
+                  <Card key={expense.id} className={`overflow-hidden ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+                    <CardContent className="p-0">
+                      <div className="p-4 border-b flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <Checkbox 
+                            checked={isSelected}
+                            onCheckedChange={() => toggleExpenseSelection(expense.id)}
+                            aria-label={`Select expense ${expense.id}`}
+                          />
+                          <div>
+                            <div className="font-medium">{expense.description}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(expense.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right font-bold">
+                          {formatCurrency(expense.amount)}
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Tag size={16} className="text-muted-foreground" />
+                          <Badge variant="outline">{expense.category}</Badge>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          {device?.model || 'N/A'}
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 pt-0 flex justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -291,18 +403,93 @@ const Expenses = () => {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        )}
+        
+        {/* Desktop Expenses Table */}
+        {!isMobile && (
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={
+                        filteredExpenses.length > 0 && 
+                        selectedExpenses.length === filteredExpenses.length
+                      }
+                      onCheckedChange={selectAllExpenses}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Dispositivo</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredExpenses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Nenhuma despesa encontrada
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredExpenses.map((expense) => {
+                    const device = getDeviceById(expense.device_id);
+                    
+                    return (
+                      <TableRow key={expense.id}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedExpenses.includes(expense.id)}
+                            onCheckedChange={() => toggleExpenseSelection(expense.id)}
+                            aria-label={`Select expense ${expense.id}`}
+                          />
+                        </TableCell>
+                        <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{device?.model || 'N/A'}</TableCell>
+                        <TableCell>{expense.description}</TableCell>
+                        <TableCell>{expense.category}</TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(expense.amount)}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => removeExpense(expense.id)}>
+                                <Trash className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         
         {/* New Expense Dialog */}
         <Dialog open={showNewExpenseDialog} onOpenChange={setShowNewExpenseDialog}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className={isMobile ? "w-[calc(100%-32px)] p-4" : "sm:max-w-[500px]"}>
             <DialogHeader>
               <DialogTitle>Adicionar Nova Despesa</DialogTitle>
               <DialogDescription>

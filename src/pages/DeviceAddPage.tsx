@@ -184,28 +184,40 @@ const DeviceAddPage = () => {
 
   const onSubmit = (data: DeviceFormValues) => {
     try {
-      // Create a fully valid device object with all required fields
-      const deviceData = {
-        model: data.model,
-        color: data.color,
-        storage: data.storage,
-        condition: data.condition,
-        purchase_price: data.purchase_price,
-        sale_price: data.sale_price,
-        supplier_id: data.supplier_id,
-        imei1: data.imei1,
-        imei2: data.imei2 || '',
-        serial_number: data.serial_number,
-        battery_health: data.battery_health || '100%',
-        has_apple_warranty: data.has_apple_warranty,
-        warranty_date: data.warranty_date ? data.warranty_date.toISOString() : undefined,
-        original_date: data.original_date,
-        _exact_original_date: data.original_date.toString(),
-        notes: data.notes || '',
+      const { model, color, storage, condition, purchase_price, sale_price, supplier_id, imei1, imei2, serial_number, battery_health, has_apple_warranty, warranty_date, original_date, notes } = data;
+      
+      const warranty = warranty_date ? new Date(warranty_date) : null;
+      const originalDate = original_date ? new Date(original_date) : null;
+      
+      const formValues = {
+        model,
+        color,
+        storage,
+        condition,
+        purchase_price,
+        sale_price,
+        supplier_id,
+        imei1,
+        imei2,
+        serial_number,
+        battery_health,
+        has_apple_warranty,
+        warranty_date,
+        original_date,
+        notes
       };
-      
-      const newDevice = addDevice(deviceData);
-      
+
+      // Convert Date objects to strings before adding
+      const newDevice = {
+        ...formValues,
+        warranty_date: warranty ? warranty.toISOString() : null,
+        original_date: originalDate ? originalDate.toISOString() : null,
+        purchase_date: new Date().toISOString()
+      };
+
+      // Add the device
+      addDevice(newDevice);
+
       toast.success('iPhone adicionado com sucesso!');
       
       navigate(`/devices/${newDevice.id}`);

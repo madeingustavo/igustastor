@@ -9,7 +9,7 @@ export const BREAKPOINTS = {
 }
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     // Initial check
@@ -25,11 +25,11 @@ export function useIsMobile() {
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
 
-  return !!isMobile
+  return isMobile
 }
 
 export function useBreakpoint() {
-  const [breakpoint, setBreakpoint] = React.useState<"mobile" | "tablet" | "desktop" | undefined>(undefined)
+  const [breakpoint, setBreakpoint] = React.useState<"mobile" | "tablet" | "desktop">("desktop")
 
   React.useEffect(() => {
     const checkBreakpoint = () => {

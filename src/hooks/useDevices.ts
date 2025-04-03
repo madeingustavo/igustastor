@@ -117,6 +117,37 @@ export const useDevices = () => {
   const getSoldDevices = () => {
     return devices.filter(device => device.status === 'sold');
   };
+  
+  // Get total inventory value (sum of purchase prices for available devices)
+  const getTotalInventoryValue = () => {
+    return getAvailableDevices().reduce((total, device) => total + device.purchase_price, 0);
+  };
+  
+  // Get potential sales value (sum of sale prices for available devices)
+  const getPotentialSalesValue = () => {
+    return getAvailableDevices().reduce((total, device) => total + device.sale_price, 0);
+  };
+  
+  // Get potential profit (difference between potential sales and inventory value)
+  const getPotentialProfit = () => {
+    return getPotentialSalesValue() - getTotalInventoryValue();
+  };
+  
+  // Get the count of available devices
+  const getAvailableDevicesCount = () => {
+    return getAvailableDevices().length;
+  };
+  
+  // Get devices that are more than 30 days old
+  const getOldDevices = () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return getAvailableDevices().filter(device => {
+      const deviceDate = new Date(device.created_date);
+      return deviceDate < thirtyDaysAgo;
+    });
+  };
 
   return {
     devices,
@@ -128,6 +159,11 @@ export const useDevices = () => {
     getDevicesBySupplier,
     filterDevices,
     getAvailableDevices,
-    getSoldDevices
+    getSoldDevices,
+    getTotalInventoryValue,
+    getPotentialSalesValue,
+    getPotentialProfit,
+    getAvailableDevicesCount,
+    getOldDevices
   };
 };

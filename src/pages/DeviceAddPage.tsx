@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useForm } from 'react-hook-form';
@@ -45,7 +44,6 @@ import { cn } from '@/lib/utils';
 import { IPHONE_MODELS, MODEL_SPECS, CONDITION_OPTIONS } from '../utils/deviceConstants';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Schema for the form validation
 const deviceSchema = z.object({
   model: z.string({ required_error: "Modelo é obrigatório" }),
   color: z.string({ required_error: "Cor é obrigatória" }),
@@ -76,18 +74,15 @@ const DeviceAddPage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Store the step state
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [suppliers, setSuppliers] = useState(getAllSuppliers());
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [availableStorage, setAvailableStorage] = useState<string[]>([]);
   
-  // Validation states
   const [imeiValidation, setImeiValidation] = useState<{ isValid: boolean, message: string } | null>(null);
   const [serialValidation, setSerialValidation] = useState<{ isValid: boolean, message: string } | null>(null);
   const [batteryValidation, setBatteryValidation] = useState<{ isValid: boolean, message: string, formattedValue?: string } | null>(null);
 
-  // Initialize the form with default values
   const form = useForm<DeviceFormValues>({
     resolver: zodResolver(deviceSchema),
     defaultValues: {
@@ -109,19 +104,16 @@ const DeviceAddPage = () => {
     },
   });
 
-  // Watch for model changes to update available colors and storage
   const watchedModel = form.watch('model');
   const imei1 = form.watch('imei1');
   const serialNumber = form.watch('serial_number');
   const batteryHealth = form.watch('battery_health');
   
-  // Validate IMEI when it changes
   useEffect(() => {
     if (imei1 && imei1.length === 15) {
       const result = validateIMEI(imei1);
       setImeiValidation(result);
       
-      // If invalid, show validation message in the form
       if (!result.isValid) {
         form.setError('imei1', { message: result.message });
       } else {
@@ -137,13 +129,11 @@ const DeviceAddPage = () => {
     }
   }, [imei1, form]);
   
-  // Validate Serial Number when it changes
   useEffect(() => {
     if (serialNumber && serialNumber.length > 0) {
       const result = validateSerialNumber(serialNumber);
       setSerialValidation(result);
       
-      // If invalid, show validation message in the form
       if (!result.isValid) {
         form.setError('serial_number', { message: result.message });
       } else {
@@ -154,14 +144,12 @@ const DeviceAddPage = () => {
     }
   }, [serialNumber, form]);
   
-  // Validate Battery Health when it changes
   useEffect(() => {
     if (batteryHealth && batteryHealth.length > 0) {
       const result = validateBatteryHealth(batteryHealth);
       setBatteryValidation(result);
       
       if (result.isValid && result.formattedValue) {
-        // Auto-format the battery health value
         form.setValue('battery_health', result.formattedValue);
       } else if (!result.isValid) {
         form.setError('battery_health', { message: result.message });
@@ -178,7 +166,6 @@ const DeviceAddPage = () => {
       setAvailableColors(MODEL_SPECS[watchedModel].colors);
       setAvailableStorage(MODEL_SPECS[watchedModel].storage);
       
-      // Reset color and storage if they're not available for this model
       const currentColor = form.getValues('color');
       const currentStorage = form.getValues('storage');
       
@@ -195,20 +182,15 @@ const DeviceAddPage = () => {
     }
   }, [watchedModel, form]);
 
-  // Handle form submission
   const onSubmit = (data: DeviceFormValues) => {
     try {
-      // Add the device to the database
       const newDevice = addDevice({
         ...data,
-        status: 'available' as const,
         _exact_original_date: new Date().toISOString(),
       });
       
-      // Show success message
       toast.success('iPhone adicionado com sucesso!');
       
-      // Navigate to the device details page
       navigate(`/devices/${newDevice.id}`);
     } catch (error) {
       console.error('Erro ao adicionar iPhone:', error);
@@ -216,26 +198,17 @@ const DeviceAddPage = () => {
     }
   };
 
-  // Handle quick supplier form callback
   const handleSupplierAdded = (supplierId: string) => {
-    // Refresh suppliers list
     setSuppliers(getAllSuppliers());
-    
-    // Set the new supplier as selected
     form.setValue('supplier_id', supplierId);
-    
-    // Show success message
     toast.success('Fornecedor adicionado e selecionado!');
   };
 
-  // Handle step navigation
   const handleNextStep = async () => {
     if (currentStep === 1) {
-      // Validate basic info fields
       const isValid = await form.trigger(['model', 'color', 'storage', 'condition', 'purchase_price', 'sale_price', 'supplier_id']);
       if (isValid) setCurrentStep(2);
     } else if (currentStep === 2) {
-      // Submit the form on the last step
       form.handleSubmit(onSubmit)();
     }
   };

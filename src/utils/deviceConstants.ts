@@ -1,4 +1,19 @@
 
+// Define type for iPhone model
+export type iPhoneModel = typeof IPHONE_MODELS[number];
+
+// Define type for model specifications
+export interface ModelSpecification {
+  colors: string[];
+  storage: string[];
+}
+
+// Define type for condition option
+export interface ConditionOption {
+  value: string;
+  label: string;
+}
+
 // Define iPhone models available in the system
 export const IPHONE_MODELS = [
   "iPhone XR",
@@ -25,10 +40,10 @@ export const IPHONE_MODELS = [
   "iPhone 16 Plus",
   "iPhone 16 Pro",
   "iPhone 16 Pro Max"
-];
+] as const;
 
 // Define specifications for each model (colors and storage options)
-export const MODEL_SPECS: Record<string, { colors: string[], storage: string[] }> = {
+export const MODEL_SPECS: Record<iPhoneModel, ModelSpecification> = {
   "iPhone XR": {
     colors: ["Preto", "Branco", "Azul", "Amarelo", "Coral", "Vermelho"],
     storage: ["64GB", "128GB", "256GB"]
@@ -128,7 +143,7 @@ export const MODEL_SPECS: Record<string, { colors: string[], storage: string[] }
 };
 
 // Define condition options for device state
-export const CONDITION_OPTIONS = [
+export const CONDITION_OPTIONS: ConditionOption[] = [
   { value: "10", label: "Novo (10/10)" },
   { value: "9", label: "Excelente (9/10)" },
   { value: "8", label: "Muito bom (8/10)" },
@@ -141,7 +156,7 @@ export const CONDITION_OPTIONS = [
   { value: "1", label: "Péssimo (1/10)" }
 ];
 
-// Add the missing constants
+// Derived constants with proper typing
 export const DEVICE_MODEL = IPHONE_MODELS;
 export const DEVICE_STORAGE = Array.from(new Set(
   Object.values(MODEL_SPECS).flatMap(spec => spec.storage)

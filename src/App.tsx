@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Devices from "./pages/Devices";
@@ -16,9 +16,15 @@ import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
 
 function App() {
-  // Create a client for React Query
-  // Using useState ensures the QueryClient is created only once per component lifecycle
-  const [queryClient] = useState(() => new QueryClient());
+  // Create a client for React Query with consistent configuration
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1
+      }
+    }
+  }));
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -30,8 +36,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/devices" element={<Devices />} />
             <Route path="/devices/add" element={<DeviceAddPage />} />
-            <Route path="/devices/:id" element={<Devices />} /> {/* For future device detail view */}
-            <Route path="/devices/edit/:id" element={<DeviceAddPage />} /> {/* For future device edit */}
+            <Route path="/devices/:id" element={<DeviceAddPage />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/reports" element={<Reports />} />

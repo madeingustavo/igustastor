@@ -1,5 +1,10 @@
 
 // Define TypeScript interfaces for all data entities
+
+export type DeviceStatus = 'available' | 'sold' | 'reserved';
+export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'pix' | 'transfer';
+export type SaleStatus = 'completed' | 'pending' | 'cancelled';
+
 export interface Device {
   id: string;
   model: string;
@@ -9,7 +14,7 @@ export interface Device {
   purchase_price: number;
   sale_price: number;
   supplier_id: string;
-  status: 'available' | 'sold' | 'reserved';
+  status: DeviceStatus;
   serial_number: string;
   notes: string;
   created_date: string;
@@ -33,8 +38,8 @@ export interface Sale {
   profit: number;
   sale_date: string;
   created_date: string;
-  payment_method: 'cash' | 'credit' | 'debit' | 'pix' | 'transfer';
-  status: 'completed' | 'pending' | 'cancelled';
+  payment_method: PaymentMethod;
+  status: SaleStatus;
 }
 
 export interface Customer {

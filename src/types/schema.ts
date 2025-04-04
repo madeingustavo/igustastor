@@ -1,3 +1,4 @@
+
 // Define TypeScript interfaces for all data entities
 export interface Device {
   id: string;
@@ -15,7 +16,7 @@ export interface Device {
   original_date?: string;
   _exact_original_date?: string;
   
-  // New technical fields
+  // Technical fields
   imei1?: string;
   imei2?: string;
   battery_health?: string;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -154,13 +155,25 @@ const DeviceAddPage = () => {
     try {
       console.log("Form data submitted:", data);
       
-      // Format dates for storage
+      // Format dates for storage and ensure all required fields are included
       const formattedData = {
-        ...data,
+        model: data.model,
+        storage: data.storage,
+        color: data.color,
+        condition: data.condition,
+        purchase_price: data.purchase_price,
+        sale_price: data.sale_price,
+        supplier_id: data.supplier_id,
+        serial_number: data.serial_number || '',
+        notes: data.notes || '',
         warranty_date: data.warranty_date ? data.warranty_date.toISOString() : undefined,
         purchase_date: data.purchase_date ? data.purchase_date.toISOString() : undefined,
         original_date: data.original_date ? data.original_date.toISOString() : undefined,
         _exact_original_date: data.original_date ? format(data.original_date, 'dd/MM/yyyy') : undefined,
+        imei1: data.imei1,
+        imei2: data.imei2,
+        battery_health: data.battery_health,
+        has_apple_warranty: data.has_apple_warranty,
       };
       
       if (isEditing && id) {

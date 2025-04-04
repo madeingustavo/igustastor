@@ -140,3 +140,13 @@ export const CONDITION_OPTIONS = [
   { value: "2", label: "Muito ruim (2/10)" },
   { value: "1", label: "Péssimo (1/10)" }
 ];
+
+// Add the missing constants
+export const DEVICE_MODEL = IPHONE_MODELS;
+export const DEVICE_STORAGE = Array.from(new Set(
+  Object.values(MODEL_SPECS).flatMap(spec => spec.storage)
+)).sort();
+export const DEVICE_COLOR = Array.from(new Set(
+  Object.values(MODEL_SPECS).flatMap(spec => spec.colors)
+)).sort();
+export const DEVICE_CONDITION = CONDITION_OPTIONS.map(option => option.value);

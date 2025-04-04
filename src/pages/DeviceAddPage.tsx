@@ -69,7 +69,7 @@ const deviceSchema = z.object({
 type DeviceFormValues = z.infer<typeof deviceSchema>;
 
 const DeviceAddPage = () => {
-  const { addDevice } = useDevices();
+  const { addDevice, updateDevice } = useDevices();
   const { getAllSuppliers } = useSuppliers();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -182,48 +182,63 @@ const DeviceAddPage = () => {
     }
   }, [watchedModel, form]);
 
-  const onSubmit = (data: DeviceFormValues) => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { model, color, storage, condition, purchase_price, sale_price, supplier_id, imei1, imei2, serial_number, battery_health, has_apple_warranty, warranty_date, original_date, notes } = form.getValues();
+    
+    const warranty = warranty_date ? new Date(warranty_date) : null;
+    const originalDate = original_date ? new Date(original_date) : null;
+    
+    const formData = {
+      model,
+      color,
+      storage,
+      condition,
+      purchase_price,
+      sale_price,
+      supplier_id,
+      imei1,
+      imei2,
+      serial_number,
+      battery_health,
+      has_apple_warranty,
+      warranty_date,
+      original_date,
+      notes
+    };
+
+    const formattedDevice = {
+      ...formData,
+      warranty_date: formData.warranty_date ? formData.warranty_date.toISOString() : undefined,
+      original_date: formData.original_date ? formData.original_date.toISOString() : undefined,
+      purchase_date: formData.purchase_date ? formData.purchase_date.toISOString() : undefined,
+      _exact_original_date: formData.original_date ? formData.original_date.toISOString() : undefined,
+    };
+
     try {
-      const { model, color, storage, condition, purchase_price, sale_price, supplier_id, imei1, imei2, serial_number, battery_health, has_apple_warranty, warranty_date, original_date, notes } = data;
-      
-      const warranty = warranty_date ? new Date(warranty_date) : null;
-      const originalDate = original_date ? new Date(original_date) : null;
-      
-      const formValues = {
-        model,
-        color,
-        storage,
-        condition,
-        purchase_price,
-        sale_price,
-        supplier_id,
-        imei1,
-        imei2,
-        serial_number,
-        battery_health,
-        has_apple_warranty,
-        warranty_date,
-        original_date,
-        notes
-      };
-
-      // Convert Date objects to strings before adding
-      const newDevice = {
-        ...formValues,
-        warranty_date: warranty ? warranty.toISOString() : null,
-        original_date: originalDate ? originalDate.toISOString() : null,
-        purchase_date: new Date().toISOString()
-      };
-
-      // Add the device
-      addDevice(newDevice);
-
-      toast.success('iPhone adicionado com sucesso!');
+      if (deviceId) {
+        updateDevice(deviceId, formattedDevice);
+        toast({
+          title: "Dispositivo atualizado",
+          description: `${formData.model} foi atualizado com sucesso.`,
+        });
+      } else {
+        const newDevice = addDevice(formattedDevice);
+        toast({
+          title: "Dispositivo adicionado",
+          description: `${formData.model} foi adicionado com sucesso.`,
+        });
+      }
       
       navigate(`/devices/${newDevice.id}`);
     } catch (error) {
-      console.error('Erro ao adicionar iPhone:', error);
-      toast.error('Erro ao adicionar iPhone. Tente novamente.');
+      console.error("Error saving device:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar o dispositivo. Tente novamente.",
+      });
     }
   };
 

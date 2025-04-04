@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Device, Supplier } from '../types/schema';
 import { useSuppliers } from './useSuppliers';
@@ -33,9 +34,10 @@ export function useDevices() {
     }
   };
 
-  const addDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date' | 'updated_date'>) => {
+  const addDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date'>) => {
     const newDevice = generateNewDevice(deviceData);
     saveDevices([...devices, newDevice]);
+    return newDevice;
   };
 
   const getDeviceById = (id: string): Device | undefined => {
@@ -44,7 +46,7 @@ export function useDevices() {
 
   const updateDevice = (id: string, updates: Partial<Omit<Device, 'id' | 'created_date'>>) => {
     const updatedDevices = devices.map(device =>
-      device.id === id ? { ...device, ...updates, updated_date: new Date().toISOString() } : device
+      device.id === id ? { ...device, ...updates } : device
     );
     saveDevices(updatedDevices);
   };
@@ -62,17 +64,48 @@ export function useDevices() {
     return devices.filter(device => device.supplier_id === supplierId);
   };
 
+  // Add new functions needed by Dashboard
+  const getTotalInventoryValue = (): number => {
+    return devices
+      .filter(device => device.status === 'available')
+      .reduce((sum, device) => sum + device.purchase_price, 0);
+  };
+
+  const getPotentialSalesValue = (): number => {
+    return devices
+      .filter(device => device.status === 'available')
+      .reduce((sum, device) => sum + device.sale_price, 0);
+  };
+
+  const getPotentialProfit = (): number => {
+    return devices
+      .filter(device => device.status === 'available')
+      .reduce((sum, device) => sum + (device.sale_price - device.purchase_price), 0);
+  };
+
+  const getOldDevices = (daysThreshold = 30): Device[] => {
+    const now = new Date();
+    const threshold = new Date(now);
+    threshold.setDate(now.getDate() - daysThreshold);
+    
+    return devices.filter(device => {
+      if (device.status !== 'available') return false;
+      const deviceDate = new Date(device.created_date);
+      return deviceDate < threshold;
+    });
+  };
+
   const generateId = (): string => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const generateNewDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date' | 'updated_date'>) => {
+  const generateNewDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date'>) => {
+    const currentDate = new Date().toISOString();
     const newDevice: Device = {
       id: generateId(),
       ...deviceData,
       status: 'available',
-      created_date: new Date().toISOString(),
-      updated_date: new Date().toISOString()
+      created_date: currentDate,
     };
     return newDevice;
   };
@@ -85,5 +118,9 @@ export function useDevices() {
     removeDevice,
     getAvailableDevicesCount,
     getDevicesBySupplier,
+    getTotalInventoryValue,
+    getPotentialSalesValue,
+    getPotentialProfit,
+    getOldDevices,
   };
 }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -19,17 +19,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, QrCode } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Layout from '../components/Layout';
-import { DEVICE_MODEL, DEVICE_STORAGE, DEVICE_COLOR, DEVICE_CONDITION } from '../utils/deviceConstants';
+import { IPHONE_MODELS, MODEL_SPECS, CONDITION_OPTIONS } from '../utils/deviceConstants';
 import { useDevices } from '../hooks/useDevices';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { useSettings } from '../hooks/useSettings';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Device } from '../types/schema';
+import { formatCondition } from '../utils/formatters';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Form validation schema
 const formSchema = z.object({
@@ -53,6 +56,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type Step = 'model' | 'color' | 'storage' | 'details';
+
 const DeviceAddPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -61,6 +66,9 @@ const DeviceAddPage = () => {
   const { formatCurrency } = useSettings();
   const [isEditing, setIsEditing] = useState(false);
   const [calculatedProfit, setCalculatedProfit] = useState(0);
+  const [currentStep, setCurrentStep] = useState<Step>('model');
+  const [availableColors, setAvailableColors] = useState<string[]>([]);
+  const [availableStorage, setAvailableStorage] = useState<string[]>([]);
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -69,7 +77,7 @@ const DeviceAddPage = () => {
       model: '',
       storage: '',
       color: '',
-      condition: 'novo',
+      condition: '10',
       purchase_price: 0,
       sale_price: 0,
       supplier_id: '',
@@ -88,6 +96,19 @@ const DeviceAddPage = () => {
   // Watch for price changes to calculate profit
   const purchasePrice = form.watch('purchase_price');
   const salePrice = form.watch('sale_price');
+  const selectedModel = form.watch('model');
+  const selectedColor = form.watch('color');
+
+  // Update available colors when model changes
+  useEffect(() => {
+    if (selectedModel) {
+      const modelSpec = MODEL_SPECS[selectedModel as keyof typeof MODEL_SPECS];
+      if (modelSpec) {
+        setAvailableColors(modelSpec.colors);
+        setAvailableStorage(modelSpec.storage);
+      }
+    }
+  }, [selectedModel]);
 
   useEffect(() => {
     if (purchasePrice && salePrice) {
@@ -138,14 +159,19 @@ const DeviceAddPage = () => {
           purchase_date: purchaseDate,
           original_date: originalDate,
         });
+
+        // Update available options based on loaded device
+        if (device.model) {
+          const modelSpec = MODEL_SPECS[device.model as keyof typeof MODEL_SPECS];
+          if (modelSpec) {
+            setAvailableColors(modelSpec.colors);
+            setAvailableStorage(modelSpec.storage);
+          }
+        }
       } else {
         // If device not found, redirect back to devices list
         navigate('/devices');
-        toast({
-          title: "Dispositivo não encontrado",
-          description: "O dispositivo que você está tentando editar não existe.",
-          variant: "destructive",
-        });
+        toast.error("Dispositivo não encontrado");
       }
     }
   }, [id, getDeviceById, navigate, form]);
@@ -179,106 +205,386 @@ const DeviceAddPage = () => {
       if (isEditing && id) {
         // Update existing device
         updateDevice(id, formattedData);
-        toast({
-          title: "Dispositivo atualizado",
-          description: `${data.model} (${data.storage}, ${data.color}) foi atualizado com sucesso.`,
-        });
+        toast.success(`Dispositivo ${data.model} atualizado com sucesso`);
       } else {
         // Add new device
         const newDevice = addDevice(formattedData);
-        toast({
-          title: "Dispositivo adicionado",
-          description: `${data.model} (${data.storage}, ${data.color}) foi adicionado com sucesso.`,
-        });
+        toast.success(`Dispositivo ${data.model} adicionado com sucesso`);
       }
       
       // Redirect to devices list
       navigate('/devices');
     } catch (error) {
       console.error('Error saving device:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar dispositivo",
-        description: "Ocorreu um erro ao tentar salvar o dispositivo. Tente novamente.",
-      });
+      toast.error("Ocorreu um erro ao tentar salvar o dispositivo. Tente novamente.");
     }
   };
 
-  return (
-    <Layout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Editar Dispositivo' : 'Adicionar Dispositivo'}</h1>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Device Details */}
-              <div className="space-y-4">
+  const nextStep = () => {
+    if (currentStep === 'model') {
+      // Validate model before proceeding
+      const isModelValid = form.trigger('model');
+      if (isModelValid) {
+        setCurrentStep('color');
+      }
+    } else if (currentStep === 'color') {
+      // Validate color before proceeding
+      const isColorValid = form.trigger('color');
+      if (isColorValid) {
+        setCurrentStep('storage');
+      }
+    } else if (currentStep === 'storage') {
+      // Validate storage before proceeding
+      const isStorageValid = form.trigger('storage');
+      if (isStorageValid) {
+        setCurrentStep('details');
+      }
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep === 'color') {
+      setCurrentStep('model');
+    } else if (currentStep === 'storage') {
+      setCurrentStep('color');
+    } else if (currentStep === 'details') {
+      setCurrentStep('storage');
+    }
+  };
+
+  // Render step indicator
+  const StepIndicator = () => {
+    return (
+      <div className="flex items-center mb-8">
+        <div 
+          className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-medium ${
+            currentStep === 'model' || currentStep === 'color' || currentStep === 'storage' || currentStep === 'details' 
+              ? 'bg-blue-500' : 'bg-gray-200 text-gray-500'
+          }`}
+        >
+          1
+        </div>
+        <div className={`h-1 w-16 ${
+          currentStep === 'color' || currentStep === 'storage' || currentStep === 'details' 
+            ? 'bg-blue-500' : 'bg-gray-200'
+        }`}></div>
+        <div 
+          className={`h-10 w-10 rounded-full flex items-center justify-center font-medium ${
+            currentStep === 'color' || currentStep === 'storage' || currentStep === 'details' 
+              ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+          }`}
+        >
+          2
+        </div>
+        <div className={`h-1 w-16 ${
+          currentStep === 'storage' || currentStep === 'details' 
+            ? 'bg-blue-500' : 'bg-gray-200'
+        }`}></div>
+        <div 
+          className={`h-10 w-10 rounded-full flex items-center justify-center font-medium ${
+            currentStep === 'storage' || currentStep === 'details' 
+              ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+          }`}
+        >
+          3
+        </div>
+      </div>
+    );
+  };
+
+  // Render step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'model':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-medium">Selecione o modelo</h2>
+            </div>
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg font-medium">Modelo do iPhone *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Reset color and storage when model changes
+                      form.setValue('color', '');
+                      form.setValue('storage', '');
+                    }} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecione o modelo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-80">
+                      {IPHONE_MODELS.map((model) => (
+                        <SelectItem key={model} value={model}>{model}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end mt-8">
+              <Button onClick={nextStep} disabled={!form.watch('model')}>
+                Próximo
+              </Button>
+            </div>
+          </div>
+        );
+      case 'color':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-medium">Escolha a cor</h2>
+            </div>
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg font-medium">Cor *</FormLabel>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {availableColors.map((color) => (
+                      <div 
+                        key={color}
+                        className={`border rounded-md p-4 cursor-pointer hover:border-blue-500 transition-colors ${
+                          field.value === color ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                        }`}
+                        onClick={() => field.onChange(color)}
+                      >
+                        <div className="flex items-center">
+                          <div className={`h-6 w-6 rounded-full mr-2 border ${
+                            field.value === color ? 'border-blue-500' : 'border-gray-300'
+                          }`}>
+                            {field.value === color && (
+                              <div className="h-full w-full rounded-full bg-blue-500 flex items-center justify-center">
+                                <div className="h-2 w-2 rounded-full bg-white"></div>
+                              </div>
+                            )}
+                          </div>
+                          <span>{color}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-between mt-8">
+              <Button variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para seleção de modelo
+              </Button>
+              <Button onClick={nextStep} disabled={!form.watch('color')}>
+                Próximo
+              </Button>
+            </div>
+          </div>
+        );
+      case 'storage':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-medium">Defina o armazenamento</h2>
+            </div>
+            <FormField
+              control={form.control}
+              name="storage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg font-medium">Armazenamento *</FormLabel>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  >
+                    {availableStorage.map((storage) => (
+                      <FormItem key={storage}>
+                        <FormLabel className="border rounded-md p-4 cursor-pointer hover:border-blue-500 transition-colors flex items-center justify-center h-16 w-full text-center">
+                          <FormControl>
+                            <RadioGroupItem value={storage} className="sr-only" />
+                          </FormControl>
+                          <span className={field.value === storage ? "font-bold text-blue-500" : ""}>
+                            {storage}
+                          </span>
+                        </FormLabel>
+                      </FormItem>
+                    ))}
+                  </RadioGroup>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-between mt-8">
+              <Button variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para seleção de cor
+              </Button>
+              <Button onClick={nextStep} disabled={!form.watch('storage')}>
+                Próximo
+              </Button>
+            </div>
+          </div>
+        );
+      case 'details':
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 p-4 rounded-md mb-6">
+              <h3 className="text-lg font-medium mb-2">Especificações selecionadas</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Modelo</p>
+                  <p className="font-medium">{form.watch('model')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Cor</p>
+                  <div className="flex items-center">
+                    <span className="inline-block h-4 w-4 rounded-full bg-yellow-400 mr-2"></span>
+                    <p className="font-medium">{form.watch('color')}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Armazenamento</p>
+                  <p className="font-medium">{form.watch('storage')}</p>
+                </div>
+              </div>
+              <div className="mt-2 text-right">
+                <Button 
+                  variant="link" 
+                  onClick={() => setCurrentStep('model')}
+                  className="text-blue-500 p-0"
+                >
+                  Alterar especificações
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <FormField
                   control={form.control}
-                  name="model"
+                  name="imei1"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Modelo</FormLabel>
+                      <FormLabel>IMEI 1 *</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Input placeholder="Ex: 356XXXXXXXXXXXXX" {...field} />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="ml-2" 
+                          onClick={() => toast.info("Funcionalidade de extração automática em desenvolvimento")}
+                        >
+                          <QrCode className="h-4 w-4 mr-1" /> Extrair automaticamente
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="imei2"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>IMEI 2 *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: iPhone 12" {...field} />
+                        <Input placeholder="Ex: 357XXXXXXXXXXXXX" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
-                  name="storage"
+                  name="serial_number"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Armazenamento</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o armazenamento" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DEVICE_STORAGE.map((storage) => (
-                            <SelectItem key={storage} value={storage}>{storage}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <FormItem className="mt-4">
+                      <FormLabel>Número de Série *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: C7GW4XXXXXX" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
-                  name="color"
+                  name="supplier_id"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cor</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a cor" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DEVICE_COLOR.map((color) => (
-                            <SelectItem key={color} value={color}>{color}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <FormItem className="mt-4">
+                      <FormLabel>Fornecedor *</FormLabel>
+                      <div className="flex">
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um fornecedor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {suppliers.map((supplier) => (
+                              <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="ml-2"
+                          onClick={() => toast.info("Funcionalidade de adição de fornecedor em desenvolvimento")}
+                        >
+                          Novo fornecedor
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+              </div>
+
+              <div>
+                <FormField
+                  control={form.control}
+                  name="battery_health"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Saúde da Bateria *</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Input placeholder="Ex: 92" {...field} />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="ml-2"
+                          onClick={() => toast.info("Funcionalidade de extração automática em desenvolvimento")}
+                        >
+                          <QrCode className="h-4 w-4 mr-1" /> Extrair automaticamente
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="condition"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="mt-4">
                       <FormLabel>Condição</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
@@ -287,8 +593,8 @@ const DeviceAddPage = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {DEVICE_CONDITION.map((condition) => (
-                            <SelectItem key={condition} value={condition}>{condition}</SelectItem>
+                          {CONDITION_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -296,213 +602,41 @@ const DeviceAddPage = () => {
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              {/* Financial Details */}
-              <div className="space-y-4">
+
                 <FormField
                   control={form.control}
                   name="purchase_price"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço de Compra</FormLabel>
+                    <FormItem className="mt-4">
+                      <FormLabel>Preço de Compra (R$) *</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Ex: 1500" {...field} />
+                        <Input type="number" placeholder="0.00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="sale_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço de Venda</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ex: 2000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Lucro Calculado: {formatCurrency(calculatedProfit)}
-                  </p>
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="supplier_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fornecedor</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o fornecedor" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {suppliers.map((supplier) => (
-                            <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-            
-            {/* Technical Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="serial_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Série</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="imei1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>IMEI 1</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="imei2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>IMEI 2</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="battery_health"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Saúde da Bateria</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="has_apple_warranty"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Garantia Apple</FormLabel>
-                        <FormDescription>
-                          O dispositivo possui garantia da Apple?
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="warranty_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data de Garantia</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Selecionar Data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date()
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+
                 <FormField
                   control={form.control}
                   name="purchase_date"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data de Compra</FormLabel>
+                    <FormItem className="mt-4">
+                      <FormLabel>Data de Cadastro</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
                               variant={"outline"}
                               className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
+                                "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP")
+                                format(field.value, "dd/MM/yyyy")
                               ) : (
-                                <span>Selecionar Data</span>
+                                <span>{format(new Date(), "dd/MM/yyyy")}</span>
                               )}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
@@ -511,53 +645,9 @@ const DeviceAddPage = () => {
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={field.value}
+                            selected={field.value || new Date()}
                             onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date()
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                 <FormField
-                  control={form.control}
-                  name="original_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data Original</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Selecionar Data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date()
-                            }
+                            disabled={(date) => date > new Date()}
                             initialFocus
                           />
                         </PopoverContent>
@@ -568,18 +658,33 @@ const DeviceAddPage = () => {
                 />
               </div>
             </div>
-            
-            {/* Notes */}
+
+            <FormField
+              control={form.control}
+              name="has_apple_warranty"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2 space-y-0 mt-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Possui garantia da Apple</FormLabel>
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-4">
                   <FormLabel>Observações</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Adicione notas sobre o dispositivo"
-                      className="resize-none"
+                      placeholder="Adicione observações sobre o dispositivo"
+                      className="resize-none h-32"
                       {...field}
                     />
                   </FormControl>
@@ -587,8 +692,41 @@ const DeviceAddPage = () => {
                 </FormItem>
               )}
             />
-            
-            <Button type="submit" className="w-full">{isEditing ? 'Atualizar Dispositivo' : 'Adicionar Dispositivo'}</Button>
+
+            <div className="flex justify-between mt-8">
+              <Button variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para seleção de armazenamento
+              </Button>
+              <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
+                Adicionar Dispositivo
+              </Button>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="container mx-auto py-10">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            className="mr-4 p-2" 
+            onClick={() => navigate('/devices')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-3xl font-bold">Novo iPhone</h1>
+        </div>
+        
+        <Form {...form}>
+          <form className="space-y-8">
+            <StepIndicator />
+            {renderStepContent()}
           </form>
         </Form>
       </div>

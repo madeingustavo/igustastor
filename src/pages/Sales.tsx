@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { useSales } from '../hooks/useSales';
@@ -7,18 +6,14 @@ import { useDevices } from '../hooks/useDevices';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
-  Table, TableBody, TableCaption, TableCell, 
+  Table, TableBody, TableCell, 
   TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, SelectContent, SelectItem, 
-  SelectTrigger, SelectValue 
-} from '@/components/ui/select';
-import { Calendar, MoreHorizontal, Eye, Trash, RefreshCw, Search, X, Phone, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Eye, Trash, RefreshCw, Phone } from 'lucide-react';
 import SaleDetailsDialog from '../components/SaleDetailsDialog';
-import { Sale, Device } from '../types/schema';
+import { Sale } from '../types/schema';
+import { DateRange } from 'react-day-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
+import SalesFilters from '../components/sales/SalesFilters';
+import SalesSummary from '../components/sales/SalesSummary';
 
 const Sales = () => {
   const { sales, removeSale } = useSales();
@@ -38,6 +35,7 @@ const Sales = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [timeFilter, setTimeFilter] = useState('current-month');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
   
@@ -73,6 +71,13 @@ const Sales = () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(now.getDate() - 30);
       if (saleDate < thirtyDaysAgo) return false;
+    } else if (timeFilter === 'custom-range' && dateRange) {
+      if (dateRange.from && saleDate < dateRange.from) return false;
+      if (dateRange.to) {
+        const endDate = new Date(dateRange.to);
+        endDate.setHours(23, 59, 59, 999);
+        if (saleDate > endDate) return false;
+      }
     }
     
     return true;
@@ -112,102 +117,26 @@ const Sales = () => {
         <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Vendas</h1>
         
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-3 md:p-4">
-            <h3 className="text-xs md:text-sm text-gray-500">Total de Vendas</h3>
-            <p className="text-xl md:text-2xl font-bold">{totalSales}</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-3 md:p-4">
-            <h3 className="text-xs md:text-sm text-gray-500">Valor Médio</h3>
-            <p className="text-xl md:text-2xl font-bold">{formatCurrency(averagePrice)}</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-3 md:p-4">
-            <h3 className="text-xs md:text-sm text-gray-500">Receita Total</h3>
-            <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-3 md:p-4">
-            <h3 className="text-xs md:text-sm text-gray-500">Lucro Total</h3>
-            <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalProfit)}</p>
-          </div>
-        </div>
+        <SalesSummary 
+          totalSales={totalSales}
+          averagePrice={averagePrice}
+          totalRevenue={totalRevenue}
+          totalProfit={totalProfit}
+          formatCurrency={formatCurrency}
+        />
         
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6">
-          <div className="w-full relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
-            <Input
-              placeholder="Buscar por nome, modelo, IMEI..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10"
-            />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
-          
-          {!isMobile && (
-            <div className="w-full md:w-52">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="completed">Completas</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="cancelled">Canceladas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <Button 
-              variant={timeFilter === 'current-month' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('current-month')}
-              className="whitespace-nowrap"
-              size={isMobile ? "sm" : "default"}
-            >
-              Mês Atual
-            </Button>
-            <Button 
-              variant={timeFilter === 'last-7-days' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('last-7-days')}
-              className="whitespace-nowrap"
-              size={isMobile ? "sm" : "default"}
-            >
-              7 dias
-            </Button>
-            <Button 
-              variant={timeFilter === 'last-30-days' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('last-30-days')}
-              className="whitespace-nowrap"
-              size={isMobile ? "sm" : "default"}
-            >
-              30 dias
-            </Button>
-            {!isMobile && (
-              <>
-                <Button variant="default" className="bg-black text-white whitespace-nowrap">
-                  Todo o Período
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2 whitespace-nowrap">
-                  <Calendar className="h-4 w-4" />
-                  Selecionar Intervalo
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <SalesFilters 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          timeFilter={timeFilter}
+          setTimeFilter={setTimeFilter}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          isMobile={isMobile}
+        />
         
         {/* Mobile Sales List */}
         {isMobile && (

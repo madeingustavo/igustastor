@@ -1,215 +1,132 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../hooks/useTheme';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Moon, Sun, Package, Users, TrendingUp, Settings, FileText, DollarSign, Home, Truck, Menu, X, LogOut, Download, Upload } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { AppStorageManager } from '../storage/AppStorageManager';
-import { Separator } from '@/components/ui/separator';
-import { useSettings } from '../hooks/useSettings';
+import Navbar from './Navbar';
+import Footer from './Footer';
+import { 
+  BarChart3, 
+  Settings, 
+  Home, 
+  Smartphone, 
+  DollarSign, 
+  CreditCard, 
+  Users, 
+  Truck, 
+  Menu,
+  X
+} from 'lucide-react';
+import { useState } from 'react';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+type NavLinkProps = {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
+  isActive: boolean;
+  onClick?: () => void;
+};
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [theme, setTheme] = useTheme();
-  const location = useLocation();
-  const { settings } = useSettings();
-  const isMobile = useIsMobile();
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-
-  const menuItems = [
-    { name: 'Dashboard', path: '/', icon: Home },
-    { name: 'Dispositivos', path: '/devices', icon: Package },
-    { name: 'Vendas', path: '/sales', icon: TrendingUp },
-    { name: 'Clientes', path: '/customers', icon: Users },
-    { name: 'Fornecedores', path: '/suppliers', icon: Truck },
-    { name: 'Despesas', path: '/expenses', icon: DollarSign },
-    { name: 'Relatórios', path: '/reports', icon: FileText },
-    { name: 'Configurações', path: '/settings', icon: Settings },
-  ];
-
-  // Handle file import
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  
-  const handleExportData = () => {
-    AppStorageManager.exportData();
-  };
-
-  const handleImportClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const success = await AppStorageManager.importData(file);
-    if (success) {
-      alert('Dados importados com sucesso! A página será recarregada.');
-      window.location.reload();
-    } else {
-      alert('Falha ao importar dados. Verifique o formato do arquivo.');
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const NavLink = ({ item, onClick }: { item: typeof menuItems[0], onClick?: () => void }) => (
-    <Link 
-      to={item.path} 
-      className={`flex items-center px-3 py-2 rounded-md text-sm ${
-        location.pathname === item.path 
-          ? 'bg-primary/10 text-primary font-medium' 
-          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+const NavLink: React.FC<NavLinkProps> = ({ to, icon, text, isActive, onClick }) => {
+  return (
+    <Link
+      to={to}
+      className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+        isActive ? 'text-white bg-blue-600' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
       }`}
       onClick={onClick}
     >
-      <item.icon className="h-4 w-4 mr-2" />
-      {item.name}
+      {icon}
+      <span>{text}</span>
     </Link>
   );
+};
+
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const navLinks = [
+    { path: '/', icon: <Home size={20} />, text: 'Dashboard' },
+    { path: '/devices', icon: <Smartphone size={20} />, text: 'Dispositivos' },
+    { path: '/sales', icon: <DollarSign size={20} />, text: 'Vendas' },
+    { path: '/expenses', icon: <CreditCard size={20} />, text: 'Despesas' },
+    { path: '/customers', icon: <Users size={20} />, text: 'Clientes' },
+    { path: '/suppliers', icon: <Truck size={20} />, text: 'Fornecedores' },
+    { path: '/reports', icon: <BarChart3 size={20} />, text: 'Relatórios' },
+    { path: '/settings', icon: <Settings size={20} />, text: 'Configurações' }, // Novo link para configurações
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b sticky top-0 z-30 bg-background">
-        <div className="container flex items-center justify-between h-14 px-4">
-          <div className="flex items-center gap-2">
-            {/* Mobile menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="p-6">
-                  <h2 className="text-lg font-semibold">{settings.companyName}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Sistema de Gestão</p>
-                </div>
-                <Separator />
-                <div className="py-4">
-                  <nav className="flex flex-col gap-1 px-2">
-                    {menuItems.map((item) => (
-                      <SheetClose asChild key={item.path}>
-                        <NavLink item={item} />
-                      </SheetClose>
-                    ))}
-                  </nav>
-                </div>
-                <Separator />
-                <div className="p-4">
-                  <div className="flex flex-col gap-2">
-                    <Button onClick={handleExportData} variant="outline" size="sm" className="justify-start">
-                      <Download className="h-4 w-4 mr-2" />
-                      Exportar Dados
-                    </Button>
-                    <Button onClick={handleImportClick} variant="outline" size="sm" className="justify-start">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Importar Dados
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-            
-            <Link to="/" className="text-xl font-semibold hidden md:block">
-              {settings.companyName}
-            </Link>
-            
-            {/* Desktop navigation */}
-            <nav className="hidden md:flex items-center gap-1 ml-6">
-              {menuItems.slice(0, 5).map((item) => (
-                <NavLink key={item.path} item={item} />
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <Navbar />
+      <div className="flex flex-1">
+        {/* Sidebar for desktop */}
+        <aside className="hidden md:flex flex-col w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col space-y-1 p-3">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                icon={link.icon}
+                text={link.text}
+                isActive={location.pathname === link.path}
+              />
+            ))}
+          </div>
+        </aside>
+
+        {/* Mobile sidebar */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed z-20 bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg"
+          >
+            <Menu size={24} />
+          </button>
+
+          {/* Mobile sidebar overlay */}
+          {isSidebarOpen && (
+            <div 
+              className="fixed inset-0 z-30 bg-black bg-opacity-50"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+
+          {/* Mobile sidebar drawer */}
+          <div
+            className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 transform transition-transform duration-200 ease-in-out ${
+              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+              <h2 className="text-lg font-semibold">Menu</h2>
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex flex-col space-y-1 p-3">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  icon={link.icon}
+                  text={link.text}
+                  isActive={location.pathname === link.path}
+                  onClick={() => setIsSidebarOpen(false)}
+                />
               ))}
-            </nav>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button onClick={toggleTheme} variant="ghost" size="icon">
-              {theme === 'light' ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-              <span className="sr-only">Alternar tema</span>
-            </Button>
-            
-            {/* More menu for desktop */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="hidden md:flex">
-                  Mais
-                  <Menu className="h-4 w-4 ml-2" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <div className="space-y-4 py-4">
-                  <h2 className="text-lg font-semibold">Menu</h2>
-                  <nav className="flex flex-col gap-2">
-                    {menuItems.slice(5).map((item) => (
-                      <SheetClose asChild key={item.path}>
-                        <Link 
-                          to={item.path} 
-                          className="flex items-center text-sm px-3 py-2 rounded-md hover:bg-accent"
-                        >
-                          <item.icon className="h-4 w-4 mr-2" />
-                          {item.name}
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </nav>
-                  <Separator />
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Dados</h3>
-                    <Button onClick={handleExportData} variant="outline" size="sm" className="w-full justify-start">
-                      <Download className="h-4 w-4 mr-2" />
-                      Exportar Dados
-                    </Button>
-                    <Button onClick={handleImportClick} variant="outline" size="sm" className="w-full justify-start">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Importar Dados
-                    </Button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImport} 
-                      accept=".json" 
-                      className="hidden" 
-                    />
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+            </div>
           </div>
         </div>
-      </header>
-      
-      {/* Main content */}
-      <main className="flex-1 container">
-        {children}
-      </main>
-      
-      {/* Footer */}
-      <footer className="py-4 border-t px-4 mt-auto">
-        <div className="container flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground gap-2 md:gap-0">
-          <p>&copy; {new Date().getFullYear()} {settings.companyName}</p>
-          <p className="text-xs">Sistema de Gestão de Vendas de iPhones</p>
-        </div>
-      </footer>
+
+        {/* Main content */}
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+      <Footer />
     </div>
   );
 };

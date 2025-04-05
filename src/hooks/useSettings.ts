@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 interface Settings {
   theme: 'light' | 'dark';
   lowStockAlert: number;
+  oldDevicesAlert: number; // Novo campo para alerta de dispositivos antigos
   currency: string;
   language: string;
   notifications: boolean;
@@ -22,6 +23,7 @@ interface Settings {
 const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   lowStockAlert: 5,
+  oldDevicesAlert: 30, // 30 dias por padrão
   currency: 'BRL',
   language: 'pt-BR',
   notifications: true,

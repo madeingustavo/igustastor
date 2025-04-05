@@ -17,6 +17,63 @@ export const useSalesData = (sales: Sale[]) => {
     return sales.filter(sale => sale.device_id === deviceId);
   };
 
+  // Filter sales based on criteria
+  const filterSales = ({ 
+    searchTerm = '', 
+    status = 'all',
+    timeFilter = 'all',
+    dateRange = {}
+  }: {
+    searchTerm?: string;
+    status?: string;
+    timeFilter?: string;
+    dateRange?: { from?: Date; to?: Date };
+  }) => {
+    return sales.filter(sale => {
+      // Filter by search term - this would typically search through related entities
+      // which would be implemented by passing in device and customer getters
+      if (searchTerm) {
+        // Basic search - in a real implementation this would check device and customer
+        if (!sale.id.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filter by status
+      if (status !== 'all' && sale.status !== status) {
+        return false;
+      }
+      
+      // Filter by time period
+      const saleDate = new Date(sale.sale_date);
+      const now = new Date();
+      
+      if (timeFilter === 'current-month') {
+        const isCurrentMonth = 
+          saleDate.getMonth() === now.getMonth() && 
+          saleDate.getFullYear() === now.getFullYear();
+        if (!isCurrentMonth) return false;
+      } else if (timeFilter === 'last-7-days') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        if (saleDate < sevenDaysAgo) return false;
+      } else if (timeFilter === 'last-30-days') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        if (saleDate < thirtyDaysAgo) return false;
+      } else if (timeFilter === 'custom-range') {
+        if (dateRange.from && saleDate < dateRange.from) return false;
+        if (dateRange.to) {
+          const endDate = new Date(dateRange.to);
+          endDate.setHours(23, 59, 59, 999);
+          if (saleDate > endDate) return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
   // Get sales by device model
   const getSalesByModel = () => {
     const modelMap = new Map();
@@ -45,6 +102,7 @@ export const useSalesData = (sales: Sale[]) => {
     getSaleById,
     getSalesByCustomerId,
     getSalesByDeviceId,
-    getSalesByModel
+    getSalesByModel,
+    filterSales
   };
 };

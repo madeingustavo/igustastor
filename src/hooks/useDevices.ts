@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { Device, Supplier } from '../types/schema';
+import { Device } from '../types/schema';
 import { useSuppliers } from './useSuppliers';
 import { useSettings } from './useSettings';
 import { generateId } from '../utils/idGenerator';
@@ -129,17 +130,19 @@ export function useDevices() {
   }, [devices]);
 
   // Get devices that have been in inventory for longer than the threshold
-  const getOldDevices = useCallback((daysThreshold = 30): Device[] => {
+  const getOldDevices = useCallback((daysThreshold?: number): Device[] => {
     const now = new Date();
+    // Use the settings value if not specified
     const threshold = new Date(now);
-    threshold.setDate(now.getDate() - daysThreshold);
+    const daysToUse = daysThreshold !== undefined ? daysThreshold : (settings.oldDevicesAlert || 30);
+    threshold.setDate(now.getDate() - daysToUse);
     
     return devices.filter(device => {
       if (device.status !== 'available') return false;
       const deviceDate = new Date(device.created_date);
       return deviceDate < threshold;
     });
-  }, [devices]);
+  }, [devices, settings.oldDevicesAlert]);
 
   // Get all devices with status filter
   const getAllDevices = useCallback((status?: 'available' | 'sold' | 'reserved'): Device[] => {

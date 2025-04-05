@@ -1,86 +1,33 @@
+
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { useSales } from '../hooks/useSales';
-import { useCustomers } from '../hooks/useCustomers';
-import { useDevices } from '../hooks/useDevices';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { 
-  Table, TableBody, TableCell, 
-  TableHead, TableHeader, TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Eye, Trash, RefreshCw, Phone } from 'lucide-react';
-import SaleDetailsDialog from '../components/SaleDetailsDialog';
 import { Sale } from '../types/schema';
-import { DateRange } from 'react-day-picker';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Card, CardContent } from "@/components/ui/card";
-
+import SaleDetailsDialog from '../components/SaleDetailsDialog';
 import SalesFilters from '../components/sales/SalesFilters';
 import SalesSummary from '../components/sales/SalesSummary';
+import SalesList from '../components/sales/SalesList';
+import SalesTable from '../components/sales/SalesTable';
 
 const Sales = () => {
-  const { sales, removeSale } = useSales();
-  const { getCustomerById } = useCustomers();
-  const { getDeviceById } = useDevices();
+  const { sales, removeSale, filterSales } = useSales();
   const { formatCurrency } = useSettings();
   const isMobile = useIsMobile();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [timeFilter, setTimeFilter] = useState('current-month');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
   
   // Filter sales based on search term and filters
-  const filteredSales = sales.filter(sale => {
-    // Filter by search term
-    if (searchTerm) {
-      const device = getDeviceById(sale.device_id);
-      const customer = getCustomerById(sale.customer_id);
-      const deviceMatches = device && device.model.toLowerCase().includes(searchTerm.toLowerCase());
-      const customerMatches = customer && customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const imeiMatches = device && (device.imei1?.includes(searchTerm) || device.imei2?.includes(searchTerm));
-      
-      if (!deviceMatches && !customerMatches && !imeiMatches) {
-        return false;
-      }
-    }
-    
-    // Filter by time period
-    const saleDate = new Date(sale.sale_date);
-    const now = new Date();
-    
-    if (timeFilter === 'current-month') {
-      const isCurrentMonth = 
-        saleDate.getMonth() === now.getMonth() && 
-        saleDate.getFullYear() === now.getFullYear();
-      if (!isCurrentMonth) return false;
-    } else if (timeFilter === 'last-7-days') {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(now.getDate() - 7);
-      if (saleDate < sevenDaysAgo) return false;
-    } else if (timeFilter === 'last-30-days') {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(now.getDate() - 30);
-      if (saleDate < thirtyDaysAgo) return false;
-    } else if (timeFilter === 'custom-range' && dateRange) {
-      if (dateRange.from && saleDate < dateRange.from) return false;
-      if (dateRange.to) {
-        const endDate = new Date(dateRange.to);
-        endDate.setHours(23, 59, 59, 999);
-        if (saleDate > endDate) return false;
-      }
-    }
-    
-    return true;
+  const filteredSales = filterSales({
+    searchTerm,
+    timeFilter,
+    dateRange
   });
   
   // Calculate summary metrics
@@ -138,180 +85,23 @@ const Sales = () => {
           isMobile={isMobile}
         />
         
-        {/* Mobile Sales List */}
-        {isMobile && (
-          <div className="space-y-3 mb-6">
-            {filteredSales.length === 0 ? (
-              <div className="text-center py-8 bg-card border rounded-lg">
-                <p className="text-muted-foreground">Nenhuma venda encontrada</p>
-              </div>
-            ) : (
-              filteredSales.map((sale) => {
-                const device = getDeviceById(sale.device_id);
-                const customer = getCustomerById(sale.customer_id);
-                
-                return (
-                  <Card key={sale.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="p-4 border-b flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">{device?.model || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(sale.sale_date).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-primary">{formatCurrency(sale.sale_price)}</div>
-                          <div className="text-sm text-green-600">
-                            +{formatCurrency(sale.profit)}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Cliente:</span>
-                          <span className="font-medium">{customer?.name || 'N/A'}</span>
-                        </div>
-                        
-                        {customer?.phone && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Contato:</span>
-                            <a 
-                              href={`https://wa.me/${customer.phone.replace(/\D/g, '')}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center text-green-600"
-                            >
-                              <Phone size={14} className="mr-1" />
-                              {customer.phone}
-                            </a>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">IMEI:</span>
-                          <span className="font-mono text-sm">{device?.imei1 || 'N/A'}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 pt-0 flex justify-between gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleViewDetails(sale)}
-                        >
-                          <Eye size={16} className="mr-2" />
-                          Detalhes
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-9 w-9">
-                              <MoreHorizontal size={16} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleCancelSale(sale.id)}>
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                              Cancelar venda
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteSale(sale.id)}>
-                              <Trash className="mr-2 h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-        )}
-        
-        {/* Desktop Sales Table */}
-        {!isMobile && (
-          <div className="overflow-x-auto rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Dispositivo</TableHead>
-                  <TableHead>IMEI</TableHead>
-                  <TableHead>Comprador</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Lucro</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSales.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      Nenhuma venda encontrada
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredSales.map((sale) => {
-                    const device = getDeviceById(sale.device_id);
-                    const customer = getCustomerById(sale.customer_id);
-                    
-                    return (
-                      <TableRow key={sale.id}>
-                        <TableCell>{new Date(sale.sale_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{device?.model || 'N/A'}</TableCell>
-                        <TableCell>{device?.imei1 || 'N/A'}</TableCell>
-                        <TableCell>{customer?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          {customer?.phone && (
-                            <a 
-                              href={`https://wa.me/${customer.phone.replace(/\D/g, '')}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center text-green-600"
-                            >
-                              {customer.phone}
-                            </a>
-                          )}
-                        </TableCell>
-                        <TableCell>{formatCurrency(sale.sale_price)}</TableCell>
-                        <TableCell className="text-green-600">
-                          {formatCurrency(sale.profit)}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewDetails(sale)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Ver detalhes
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCancelSale(sale.id)}>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                Cancelar venda
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeleteSale(sale.id)}>
-                                <Trash className="mr-2 h-4 w-4" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+        {/* Sales list or table based on device */}
+        {isMobile ? (
+          <SalesList 
+            sales={filteredSales}
+            formatCurrency={formatCurrency}
+            onViewDetails={handleViewDetails}
+            onCancelSale={handleCancelSale}
+            onDeleteSale={handleDeleteSale}
+          />
+        ) : (
+          <SalesTable
+            sales={filteredSales}
+            formatCurrency={formatCurrency}
+            onViewDetails={handleViewDetails}
+            onCancelSale={handleCancelSale}
+            onDeleteSale={handleDeleteSale}
+          />
         )}
         
         {/* Sale Details Dialog */}

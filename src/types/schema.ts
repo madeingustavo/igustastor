@@ -6,6 +6,9 @@ export type DeviceStatus = 'available' | 'sold' | 'reserved';
 export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'pix' | 'transfer';
 export type SaleStatus = 'completed' | 'pending' | 'cancelled';
 
+// Re-export the isValidId function from idGenerator
+export { isValidId } from '../utils/idGenerator';
+
 export interface Device {
   id: string;  // Formato: DEV-TIMESTAMP-RANDOM
   model: string;

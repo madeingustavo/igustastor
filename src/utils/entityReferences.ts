@@ -1,5 +1,5 @@
 
-import { EntityType, isValidId } from './idGenerator';
+import { EntityType, isValidId } from '../types/schema';
 
 /**
  * Valida se uma entidade referenciada existe

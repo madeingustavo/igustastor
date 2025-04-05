@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { formatDate } from 'date-fns';
 import { Sale } from '../types/schema';
 import { useCustomers } from '../hooks/useCustomers';
 import { useDevices } from '../hooks/useDevices';
 import { useSettings } from '../hooks/useSettings';
+import { parseId } from '../utils/idGenerator';
 import { RefreshCw, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +38,12 @@ export default function SaleDetailsDialog({
   
   const customer = getCustomerById(sale.customer_id);
   const device = getDeviceById(sale.device_id);
+
+  // For debugging purposes - can show ID format details
+  const parsedSaleId = parseId(sale.id);
+  const saleIdInfo = parsedSaleId ? 
+    `${parsedSaleId.type.toUpperCase()} criado em ${new Date(parsedSaleId.timestamp).toLocaleString()}` : 
+    'Formato antigo de ID';
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

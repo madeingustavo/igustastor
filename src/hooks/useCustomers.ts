@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Customer } from '../types/schema';
+import { generateId } from '../utils/idGenerator';
 import { toast } from 'sonner';
 
 export const useCustomers = () => {
@@ -13,16 +13,11 @@ export const useCustomers = () => {
     AppStorageManager.saveCustomers(customers);
   }, [customers]);
 
-  // Generate a unique ID
-  const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  };
-
   // Add a new customer
   const addCustomer = (customerData: Omit<Customer, 'id' | 'created_date'>) => {
     const newCustomer: Customer = {
       ...customerData,
-      id: generateId(),
+      id: generateId('customer'),
       created_date: new Date().toISOString()
     };
 

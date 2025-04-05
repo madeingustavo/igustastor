@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { FormValues } from './types';
+import { parseId } from '../../utils/idGenerator';
 
 interface DeviceIdentificationFieldsProps {
   suppliers: { id: string; name: string }[];
@@ -15,6 +16,16 @@ interface DeviceIdentificationFieldsProps {
 
 const DeviceIdentificationFields: React.FC<DeviceIdentificationFieldsProps> = ({ suppliers }) => {
   const form = useFormContext<FormValues>();
+  
+  // Display supplier name with ID info if it's using the new format
+  const enhanceSupplierDisplay = (supplier: { id: string; name: string }) => {
+    const parsedId = parseId(supplier.id);
+    if (parsedId) {
+      // If new ID format, could show additional info
+      return `${supplier.name}`;
+    }
+    return supplier.name;
+  };
   
   return (
     <div>
@@ -85,7 +96,9 @@ const DeviceIdentificationFields: React.FC<DeviceIdentificationFieldsProps> = ({
                 </FormControl>
                 <SelectContent>
                   {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {enhanceSupplierDisplay(supplier)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

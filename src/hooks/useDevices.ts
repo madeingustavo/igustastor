@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Device, Supplier } from '../types/schema';
 import { useSuppliers } from './useSuppliers';
 import { useSettings } from './useSettings';
+import { generateId } from '../utils/idGenerator';
 import { toast } from 'sonner';
 
 // Custom hook to manage devices
@@ -44,16 +44,11 @@ export function useDevices() {
     }
   }, []);
 
-  // Generate a unique ID for new devices
-  const generateId = (): string => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  };
-
   // Generate a new device with default values
   const generateNewDevice = (deviceData: Omit<Device, 'id' | 'status' | 'created_date'>): Device => {
     const currentDate = new Date().toISOString();
     const newDevice: Device = {
-      id: generateId(),
+      id: generateId('device'),
       ...deviceData,
       status: 'available',
       created_date: currentDate,

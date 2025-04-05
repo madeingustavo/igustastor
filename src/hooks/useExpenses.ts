@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Expense } from '../types/schema';
+import { generateId, isValidId } from '../utils/idGenerator';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
@@ -14,16 +15,19 @@ export const useExpenses = () => {
     AppStorageManager.saveExpenses(expenses);
   }, [expenses]);
 
-  // Generate a unique ID
-  const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  };
-
   // Add a new expense
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
+    // Validate device ID if it's set and using new format
+    if (expenseData.device_id && expenseData.device_id.includes('-')) {
+      if (!isValidId(expenseData.device_id, 'device')) {
+        toast.error('ID de dispositivo inválido');
+        return null;
+      }
+    }
+    
     const newExpense: Expense = {
       ...expenseData,
-      id: generateId(),
+      id: generateId('expense'),
     };
 
     setExpenses(prev => [...prev, newExpense]);

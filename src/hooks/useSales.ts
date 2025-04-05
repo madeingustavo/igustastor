@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { AppStorageManager } from '../storage/AppStorageManager';
 import { Sale } from '../types/schema';
+import { generateId, isValidId } from '../utils/idGenerator';
 import { toast } from 'sonner';
-import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, subMonths, setDate, getMonth, getYear } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, subMonths } from 'date-fns';
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>(AppStorageManager.getSales());
@@ -13,16 +14,26 @@ export const useSales = () => {
     AppStorageManager.saveSales(sales);
   }, [sales]);
 
-  // Generate a unique ID
-  const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  };
-
   // Add a new sale
   const addSale = (saleData: Omit<Sale, 'id' | 'created_date'>) => {
+    // Validate IDs if using the new ID format
+    if (saleData.device_id.includes('-')) {
+      if (!isValidId(saleData.device_id, 'device')) {
+        toast.error('ID de dispositivo inválido');
+        return null;
+      }
+    }
+    
+    if (saleData.customer_id.includes('-')) {
+      if (!isValidId(saleData.customer_id, 'customer')) {
+        toast.error('ID de cliente inválido');
+        return null;
+      }
+    }
+
     const newSale: Sale = {
       ...saleData,
-      id: generateId(),
+      id: generateId('sale'),
       created_date: new Date().toISOString()
     };
 

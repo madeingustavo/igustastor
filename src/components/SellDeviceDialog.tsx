@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Device } from '../types/schema';
 import { useSettings } from '../hooks/useSettings';
 import { useCustomers } from '../hooks/useCustomers';
 import { useSales } from '../hooks/useSales';
 import { useDevices } from '../hooks/useDevices';
+import { generateId } from '../utils/idGenerator';
 import { toast } from 'sonner';
 import { 
   Dialog, 
@@ -44,13 +44,14 @@ interface SellDeviceDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Rest of the component remains largely the same, with key modifications to handle the new customer ID
 const SellDeviceDialog: React.FC<SellDeviceDialogProps> = ({ 
   device, 
   open, 
   onOpenChange 
 }) => {
   const { formatCurrency } = useSettings();
-  const { customers } = useCustomers();
+  const { customers, addCustomer } = useCustomers();
   const { addSale } = useSales();
   const { updateDevice } = useDevices();
   const [useExistingCustomer, setUseExistingCustomer] = useState(false);
@@ -77,10 +78,22 @@ const SellDeviceDialog: React.FC<SellDeviceDialogProps> = ({
     // Create or use existing customer
     let customerId = data.customerId;
     
+    if (!useExistingCustomer) {
+      // Create new customer with consistent ID format
+      const newCustomer = addCustomer({
+        name: data.customerName,
+        phone: data.customerPhone,
+        email: '',
+        address: '',
+        notes: `Cliente criado durante venda do dispositivo ${device.model}`
+      });
+      customerId = newCustomer.id;
+    }
+    
     // Mark device as sold
     updateDevice(device.id, { status: 'sold' });
     
-    // Create sale record
+    // Create sale record with consistent ID format
     addSale({
       device_id: device.id,
       customer_id: customerId,
@@ -94,6 +107,9 @@ const SellDeviceDialog: React.FC<SellDeviceDialogProps> = ({
     toast.success('Venda registrada com sucesso!');
     onOpenChange(false);
   };
+
+  // Rest of the component remains the same...
+  // ... keep existing code (form rendering, UI elements, etc.)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

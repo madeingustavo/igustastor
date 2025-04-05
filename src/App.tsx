@@ -13,7 +13,8 @@ import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
 import Sales from "./pages/Sales";
 import Expenses from "./pages/Expenses";
-import Settings from "./pages/Settings"; // Nova página de configurações
+import Settings from "./pages/Settings";
+import PriceSuggestions from "./pages/PriceSuggestions"; // Nova página de sugestões de preço
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -43,7 +44,8 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/suppliers" element={<Suppliers />} />
-            <Route path="/settings" element={<Settings />} /> {/* Nova rota de configurações */}
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/price-suggestions" element={<PriceSuggestions />} /> {/* Nova rota de sugestões de preço */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

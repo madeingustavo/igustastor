@@ -1,6 +1,18 @@
 
 import { Sale } from '../../types/schema';
 
+interface DateRange {
+  from: Date;
+  to?: Date;
+}
+
+interface FilterOptions {
+  searchTerm?: string;
+  status?: string;
+  timeFilter?: string;
+  dateRange?: DateRange;
+}
+
 export const useSalesData = (sales: Sale[]) => {
   // Get sale by ID
   const getSaleById = (id: string) => {
@@ -22,13 +34,8 @@ export const useSalesData = (sales: Sale[]) => {
     searchTerm = '', 
     status = 'all',
     timeFilter = 'all',
-    dateRange = {}
-  }: {
-    searchTerm?: string;
-    status?: string;
-    timeFilter?: string;
-    dateRange?: { from?: Date; to?: Date };
-  }) => {
+    dateRange = { from: new Date(0) }  // Fornecendo um valor padrão para from
+  }: FilterOptions) => {
     return sales.filter(sale => {
       // Filter by search term - this would typically search through related entities
       // which would be implemented by passing in device and customer getters

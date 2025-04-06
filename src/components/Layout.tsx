@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -13,9 +13,20 @@ import {
   Users, 
   Truck, 
   Menu,
-  X
+  X,
+  PanelLeft
 } from 'lucide-react';
-import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from '@/components/ui/sidebar';
 
 type NavLinkProps = {
   to: string;
@@ -44,7 +55,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const navLinks = [
+  const navItems = [
     { path: '/', icon: <Home size={20} />, text: 'Dashboard' },
     { path: '/devices', icon: <Smartphone size={20} />, text: 'Dispositivos' },
     { path: '/sales', icon: <DollarSign size={20} />, text: 'Vendas' },
@@ -52,7 +63,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/customers', icon: <Users size={20} />, text: 'Clientes' },
     { path: '/suppliers', icon: <Truck size={20} />, text: 'Fornecedores' },
     { path: '/reports', icon: <BarChart3 size={20} />, text: 'Relatórios' },
-    { path: '/settings', icon: <Settings size={20} />, text: 'Configurações' }, // Novo link para configurações
+    { path: '/settings', icon: <Settings size={20} />, text: 'Configurações' },
   ];
 
   return (
@@ -62,7 +73,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Sidebar for desktop */}
         <aside className="hidden md:flex flex-col w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
           <div className="flex flex-col space-y-1 p-3">
-            {navLinks.map((link) => (
+            {navItems.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
@@ -107,7 +118,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </button>
             </div>
             <div className="flex flex-col space-y-1 p-3">
-              {navLinks.map((link) => (
+              {navItems.map((link) => (
                 <NavLink
                   key={link.path}
                   to={link.path}
@@ -122,7 +133,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         {/* Main content */}
-        <main className="flex-1">
+        <main className="flex-1 p-4 md:p-6">
           {children}
         </main>
       </div>

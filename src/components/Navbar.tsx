@@ -1,150 +1,93 @@
 
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Heart, Moon, Sun, Menu, X, Home, Tag, Info } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import { useCart } from '../hooks/useCart';
-import { useFavorites } from '../hooks/useFavorites';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Smartphone, DollarSign, Users, BarChart3, Settings, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { 
+  NavigationMenu, 
+  NavigationMenuItem, 
+  NavigationMenuLink, 
+  NavigationMenuList, 
+  navigationMenuTriggerStyle 
+} from '@/components/ui/navigation-menu';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '../context/AuthContext';
 
-export default function Navbar() {
+const Navbar = () => {
   const [theme, setTheme] = useTheme();
-  const { cart } = useCart();
-  const { favorites } = useFavorites();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const location = useLocation();
+  const { user, logout } = useAuth();
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  const navItems = [
+    { path: '/', icon: <Home className="mr-2 h-4 w-4" />, label: 'Dashboard' },
+    { path: '/devices', icon: <Smartphone className="mr-2 h-4 w-4" />, label: 'Dispositivos' },
+    { path: '/sales', icon: <DollarSign className="mr-2 h-4 w-4" />, label: 'Vendas' },
+    { path: '/customers', icon: <Users className="mr-2 h-4 w-4" />, label: 'Clientes' },
+    { path: '/reports', icon: <BarChart3 className="mr-2 h-4 w-4" />, label: 'Relatórios' },
+  ];
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
   };
 
   return (
-    <nav className="sticky top-0 z-10 bg-background border-b border-border shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="text-xl md:text-2xl font-bold text-gradient">OfflineStore</span>
+    <header className="sticky top-0 z-30 w-full border-b bg-background">
+      <div className="container flex h-16 items-center justify-between py-4">
+        <div className="flex items-center gap-2">
+          <Link to="/" className="font-bold text-xl text-primary">
+            iGustaStore
           </Link>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Toggle menu">
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </Button>
-          </div>
-
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link to="/products" className="text-foreground hover:text-primary transition-colors">
-              Products
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-primary transition-colors">
-              About
-            </Link>
-          </div>
-
-          {/* Actions */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-            </Button>
-            
-            <Link to="/favorites" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Favorites">
-                <Heart size={20} />
-                {favorites.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                    {favorites.length}
-                  </span>
-                )}
-              </Button>
-            </Link>
-            
-            <Link to="/cart" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Cart">
-                <ShoppingCart size={20} />
-                {cart.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                    {cart.length}
-                  </span>
-                )}
-              </Button>
-            </Link>
-          </div>
+          
+          <NavigationMenu className="hidden md:flex">
+            <NavigationMenuList>
+              {navItems.map((item) => (
+                <NavigationMenuItem key={item.path}>
+                  <Link to={item.path} legacyBehavior passHref>
+                    <NavigationMenuLink 
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        "px-4 py-2 flex items-center text-sm font-medium",
+                        isActive(item.path) ? "bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-100" : ""
+                      )}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="md:hidden pt-4 pb-3 space-y-1 animate-fade-in">
-            <Link 
-              to="/" 
-              className="flex items-center px-4 py-3 rounded-md text-foreground hover:bg-accent hover:text-primary"
-              onClick={closeMenu}
-            >
-              <Home className="h-5 w-5 mr-3" />
-              Home
-            </Link>
-            <Link 
-              to="/products" 
-              className="flex items-center px-4 py-3 rounded-md text-foreground hover:bg-accent hover:text-primary"
-              onClick={closeMenu}
-            >
-              <Tag className="h-5 w-5 mr-3" />
-              Products
-            </Link>
-            <Link 
-              to="/about" 
-              className="flex items-center px-4 py-3 rounded-md text-foreground hover:bg-accent hover:text-primary"
-              onClick={closeMenu}
-            >
-              <Info className="h-5 w-5 mr-3" />
-              About
-            </Link>
-            
-            <div className="flex items-center justify-between pt-3 px-4 border-t border-border mt-3">
-              <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
-                  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                </Button>
-                
-                <Link to="/favorites" className="relative" onClick={closeMenu}>
-                  <Button variant="ghost" size="icon" aria-label="Favorites">
-                    <Heart size={20} />
-                    {favorites.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                        {favorites.length}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-                
-                <Link to="/cart" className="relative" onClick={closeMenu}>
-                  <Button variant="ghost" size="icon" aria-label="Cart">
-                    <ShoppingCart size={20} />
-                    {cart.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                        {cart.length}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-              </div>
-            </div>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {user?.name?.charAt(0) || 'G'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium hidden md:inline-block">
+              {user?.name || 'Gustavo'}
+            </span>
           </div>
-        )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
-}
+};
+
+export default Navbar;

@@ -1,3 +1,4 @@
+
 import { apiClient } from './api.client';
 import { API_ENDPOINTS } from '../config/api.config';
 import { toast } from 'sonner';
@@ -19,6 +20,25 @@ export interface LoginCredentials {
 export interface LoginResponse {
   user: AuthUser;
   token: string;
+}
+
+export interface RegisterUserData {
+  username: string;
+  email: string;
+  password: string;
+  name: string;
+  role?: string;
+}
+
+export interface UpdateProfileData {
+  name?: string;
+  email?: string;
+  username?: string;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export class AuthService {

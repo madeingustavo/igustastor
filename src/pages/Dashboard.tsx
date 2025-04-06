@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { ShoppingBag, DollarSign, TrendingUp, Package, AlertTriangle, BarChart2 } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, BarChart2, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDevices } from '../hooks/useDevices';
 import { useSales } from '../hooks/useSales';
@@ -52,23 +51,26 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button asChild>
-            <Link to="/devices/add">Adicionar Dispositivo</Link>
+          <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Link to="/devices/add">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Dispositivo
+            </Link>
           </Button>
         </div>
         
         {/* Stats overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="py-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Estoque Disponível
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-0">
               <div className="flex items-center">
                 <Package className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="text-2xl font-bold">{getAvailableDevicesCount()}</span>
@@ -80,12 +82,12 @@ const Dashboard = () => {
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="py-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Lucro Estimado
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-0">
               <div className="flex items-center">
                 <TrendingUp className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="text-2xl font-bold">{formatCurrency(getPotentialProfit())}</span>
@@ -97,12 +99,12 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="py-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Lucro Hoje
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-0">
               <div className="flex items-center">
                 <DollarSign className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="text-2xl font-bold">{formatCurrency(netTodayProfit)}</span>
@@ -114,12 +116,12 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="py-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Lucro Mensal
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-0">
               <div className="flex items-center">
                 <BarChart2 className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="text-2xl font-bold">{formatCurrency(netMonthlyProfit)}</span>
@@ -132,14 +134,14 @@ const Dashboard = () => {
         </div>
         
         {/* Tabs for different views */}
-        <Tabs defaultValue="sales" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="sales">Vendas</TabsTrigger>
-            <TabsTrigger value="expenses">Despesas</TabsTrigger>
-            <TabsTrigger value="alerts">Alertas</TabsTrigger>
+        <Tabs defaultValue="vendas" className="space-y-4">
+          <TabsList className="bg-muted">
+            <TabsTrigger value="vendas">Vendas</TabsTrigger>
+            <TabsTrigger value="despesas">Despesas</TabsTrigger>
+            <TabsTrigger value="alertas">Alertas</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="sales" className="space-y-4">
+          <TabsContent value="vendas" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Vendas Recentes (30 dias)</CardTitle>
@@ -227,7 +229,7 @@ const Dashboard = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="expenses" className="space-y-4">
+          <TabsContent value="despesas" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Despesas por Categoria</CardTitle>
@@ -320,7 +322,7 @@ const Dashboard = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="alerts" className="space-y-4">
+          <TabsContent value="alertas" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Dispositivos Antigos em Estoque</CardTitle>

@@ -7,6 +7,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
 }
@@ -74,6 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user,
     loading,
     isAuthenticated: !!user,
+    isAdmin: user?.role === 'admin' || false,
     login,
     logout,
   };
@@ -84,4 +86,3 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useAuth = () => useContext(AuthContext);
 
 export default AuthContext;
-

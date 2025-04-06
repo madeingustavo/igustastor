@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '../context/AuthContext';
-import { LoginCredentials } from '../services/auth.service';
 
+// Update login schema to use username instead of email
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  username: z.string().min(1, 'Usuário é obrigatório'),
+  password: z.string().min(1, 'Senha é obrigatória')
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -30,7 +30,7 @@ const Login: React.FC = () => {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -38,12 +38,10 @@ const Login: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const credentials: LoginCredentials = {
-        email: data.email,
-        password: data.password,
-      };
-      
-      const success = await login(credentials);
+      const success = await login({
+        username: data.username,
+        password: data.password
+      });
       
       if (success) {
         // Redirect back to the page they tried to visit or to dashboard
@@ -72,14 +70,14 @@ const Login: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Usuário</FormLabel>
                     <FormControl>
                       <Input 
-                        type="email" 
-                        placeholder="seu.email@exemplo.com" 
+                        type="text" 
+                        placeholder="Seu usuário" 
                         {...field} 
                         disabled={isLoading}
                       />
@@ -123,3 +121,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+

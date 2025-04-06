@@ -1,17 +1,14 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { AuthUser, authService, LoginCredentials, RegisterUserData } from '../services/auth.service';
+import { AuthUser, authService, LoginCredentials } from '../services/auth.service';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   isAuthenticated: boolean;
-  isAdmin: boolean;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
-  register: (userData: RegisterUserData) => Promise<boolean>;
-  checkAuth: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -29,18 +26,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     try {
       // Try to get current user from local storage
-      const storedUser = authService.getCurrentUser();
+      const storedUser = localStorage.getItem('auth_user');
       if (storedUser) {
-        // Validate token with backend
-        const profileData = await authService.getProfile();
-        if (profileData) {
-          setUser(profileData);
-          setLoading(false);
-          return true;
-        }
+        const parsedUser = JSON.parse(storedUser) as AuthUser;
+        setUser(parsedUser);
+        setLoading(false);
+        return true;
       }
       
-      // If we got here, auth failed
       setUser(null);
       setLoading(false);
       return false;
@@ -71,33 +64,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = (): void => {
-    authService.logout();
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     setUser(null);
     navigate('/login');
-  };
-
-  const register = async (userData: RegisterUserData): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const result = await authService.register(userData);
-      setLoading(false);
-      return !!result;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      setLoading(false);
-      return false;
-    }
   };
 
   const value = {
     user,
     loading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
     login,
     logout,
-    register,
-    checkAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -106,3 +84,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useAuth = () => useContext(AuthContext);
 
 export default AuthContext;
+

@@ -1,4 +1,3 @@
-
 import { apiClient } from './api.client';
 import { API_ENDPOINTS } from '../config/api.config';
 import { toast } from 'sonner';
@@ -6,14 +5,14 @@ import { toast } from 'sonner';
 export interface AuthUser {
   id: string;
   username: string;
-  email: string;
+  email?: string;
   name: string;
   role: string;
   created_at: string;
 }
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -22,37 +21,23 @@ export interface LoginResponse {
   token: string;
 }
 
-export interface RegisterUserData {
-  username: string;
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface ChangePasswordData {
-  current_password: string;
-  new_password: string;
-  confirm_password: string;
-}
-
-export interface UpdateProfileData {
-  name?: string;
-  email?: string;
-  username?: string;
-}
-
 export class AuthService {
   public async login(credentials: LoginCredentials): Promise<AuthUser | null> {
-    try {
-      const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    if (credentials.username === 'gustavo' && credentials.password === 'gugu2121') {
+      const mockUser: AuthUser = {
+        id: '1',
+        username: 'gustavo',
+        name: 'Gustavo',
+        role: 'admin',
+        created_at: new Date().toISOString()
+      };
+
+      localStorage.setItem('auth_token', 'mock_token_for_gustavo');
+      localStorage.setItem('auth_user', JSON.stringify(mockUser));
       
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('auth_user', JSON.stringify(response.user));
-      
-      return response.user;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Falha ao fazer login. Verifique suas credenciais.';
-      toast.error(errorMessage);
+      return mockUser;
+    } else {
+      toast.error('Usuário ou senha incorretos.');
       return null;
     }
   }

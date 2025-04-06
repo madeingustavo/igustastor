@@ -20,8 +20,8 @@ interface SalesFiltersProps {
   setFilterStatus: (status: string) => void;
   timeFilter: string;
   setTimeFilter: (filter: string) => void;
-  dateRange?: DateRange;
-  setDateRange: (range: DateRange | undefined) => void;
+  dateRange?: { from?: Date; to?: Date };
+  setDateRange: (range: { from?: Date; to?: Date }) => void;
   isMobile: boolean;
 }
 
@@ -80,7 +80,7 @@ const SalesFilters: React.FC<SalesFiltersProps> = ({
             variant={timeFilter === 'current-month' ? 'default' : 'outline'} 
             onClick={() => {
               setTimeFilter('current-month');
-              setDateRange(undefined);
+              setDateRange({});
             }}
             size={isMobile ? "sm" : "default"}
           >
@@ -90,7 +90,7 @@ const SalesFilters: React.FC<SalesFiltersProps> = ({
             variant={timeFilter === 'last-7-days' ? 'default' : 'outline'} 
             onClick={() => {
               setTimeFilter('last-7-days');
-              setDateRange(undefined);
+              setDateRange({});
             }}
             size={isMobile ? "sm" : "default"}
           >
@@ -100,7 +100,7 @@ const SalesFilters: React.FC<SalesFiltersProps> = ({
             variant={timeFilter === 'last-30-days' ? 'default' : 'outline'} 
             onClick={() => {
               setTimeFilter('last-30-days');
-              setDateRange(undefined);
+              setDateRange({});
             }}
             size={isMobile ? "sm" : "default"}
           >
@@ -110,7 +110,7 @@ const SalesFilters: React.FC<SalesFiltersProps> = ({
             variant={timeFilter === 'all-time' ? 'default' : 'outline'} 
             onClick={() => {
               setTimeFilter('all-time');
-              setDateRange(undefined);
+              setDateRange({});
             }}
             size={isMobile ? "sm" : "default"}
           >
@@ -119,9 +119,9 @@ const SalesFilters: React.FC<SalesFiltersProps> = ({
           
           {/* Custom Date Range */}
           <DatePickerWithRange 
-            dateRange={dateRange}
+            dateRange={dateRange as DateRange}
             onRangeChange={(range) => {
-              setDateRange(range);
+              setDateRange(range || {});
               if (range) {
                 setTimeFilter('custom-range');
               }

@@ -1,7 +1,7 @@
 
 import { Sale } from '../../types/schema';
 
-interface DateRange {
+export interface DateRange {
   from: Date;
   to?: Date;
 }
@@ -10,7 +10,10 @@ interface FilterOptions {
   searchTerm?: string;
   status?: string;
   timeFilter?: string;
-  dateRange?: DateRange;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
 }
 
 export const useSalesData = (sales: Sale[]) => {
@@ -34,7 +37,7 @@ export const useSalesData = (sales: Sale[]) => {
     searchTerm = '', 
     status = 'all',
     timeFilter = 'all',
-    dateRange = { from: new Date(0) }  // Fornecendo um valor padrão para from
+    dateRange = {}
   }: FilterOptions) => {
     return sales.filter(sale => {
       // Filter by search term - this would typically search through related entities

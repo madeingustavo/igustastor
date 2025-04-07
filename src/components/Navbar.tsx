@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Smartphone, DollarSign, Users, BarChart3, Settings, Moon, Sun } from 'lucide-react';
+import { Home, Smartphone, DollarSign, Users, BarChart3, Settings, Moon, Sun, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   NavigationMenu, 
@@ -15,7 +15,11 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
+type NavbarProps = {
+  onMenuClick?: () => void;
+};
+
+const Navbar = ({ onMenuClick }: NavbarProps) => {
   const [theme, setTheme] = useTheme();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -72,6 +76,10 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
+
+          <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden">
+            <Menu className="h-5 w-5" />
           </Button>
 
           <div className="flex items-center gap-2">
